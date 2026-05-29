@@ -2,7 +2,7 @@
 //  UserRole.swift
 //  YukDebat
 //
-//  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
+//  Created by Keane Juan Suryanto on 29/05/26.
 //
 
 import Foundation
