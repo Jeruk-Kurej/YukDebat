@@ -1,0 +1,25 @@
+//
+//  CaseBuildingNoteModel.swift
+//  YukDebat
+//
+//  Created by Hanzelius Kwan on 29/05/26.
+//
+
+import Foundation
+
+/// Defines the structure for debater strategy notes.
+/// Includes visibility and feedback states to fulfill UC01 and UC04 integration.
+struct CaseBuildingNoteModel: Codable, Identifiable {
+    let id: String
+    let ownerId: String
+    var motionTitle: String
+    var argumentsRichText: String
+    var visibility: VisibilityType
+    var isFeedbackRequested: Bool
+    var updatedAt: Date
+    
+    /// Validates if the note has sufficient content before allowing cloud synchronization.
+    func validateContent() -> Bool {
+        return !motionTitle.isEmpty && argumentsRichText.count >= 50
+    }
+}
