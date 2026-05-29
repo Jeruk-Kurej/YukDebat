@@ -78,7 +78,7 @@ struct EvaluationFormView: View {
     
     private func submitEvaluation() {
         isSubmitting = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {]
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             if let index = motionViewModel.savedNotes.firstIndex(where: { $0.id == noteToEvaluate.id }) {
                 motionViewModel.savedNotes[index].isFeedbackRequested = false
             }
