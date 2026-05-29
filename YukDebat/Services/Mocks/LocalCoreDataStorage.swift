@@ -2,7 +2,7 @@
 //  LocalCoreDataStorage.swift
 //  YukDebat
 //
-//  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
+//  Created by Mario Ruby Ariesusandi  on 29-05-2026.
 //
 
 import Foundation
