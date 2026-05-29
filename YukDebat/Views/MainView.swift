@@ -19,7 +19,7 @@ struct MainView: View {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
 
-            SparringView()
+            SparringView(viewModel: SparringViewModel(dbService: MockFirestoreService()))
                 .tabItem { Label("Sparring", systemImage: "figure.boxing") }
 
             // Motion Archive dipassing ViewModel yang sama agar data sinkron
