@@ -14,9 +14,8 @@ struct EvaluationModel: Codable, Identifiable {
     var speakerScores: [String: Int]
     var narrativeFeedback: String
     let createdAt: Date
-    
+
     func calculateTeamRankings() -> [String: Int] {
         return [:]
     }
 }
-

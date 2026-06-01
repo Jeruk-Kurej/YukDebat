@@ -16,7 +16,7 @@ struct CaseBuildingNoteModel: Codable, Identifiable {
     var motionTitle: String
     var argumentsRichText: String
     var visibility: VisibilityType
-    
+
     // Boolean variables strictly use 'is', 'has', 'should', or 'can' prefix
     var isFeedbackRequested: Bool
     var updatedAt: Date

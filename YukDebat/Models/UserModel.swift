@@ -15,7 +15,7 @@ struct UserModel: Codable, Identifiable {
     var name: String
     var email: String
     var role: UserRole
-    
+
     // Boolean variables strictly use 'is', 'has', 'should', or 'can' prefix
     var isActive: Bool
     let createdAt: Date

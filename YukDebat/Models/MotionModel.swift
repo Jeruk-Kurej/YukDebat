@@ -14,8 +14,7 @@ struct MotionModel: Codable, Identifiable, Equatable {
     let id: String
     let title: String
     let category: String
-    
+
     // Boolean variables strictly use 'is', 'has', 'should', or 'can' prefix
     var isWishlisted: Bool
 }
-
