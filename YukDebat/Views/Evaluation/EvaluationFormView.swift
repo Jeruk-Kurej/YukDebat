@@ -7,83 +7,172 @@
 
 import SwiftUI
 
+/// A purely visual form for Adjudicators to submit evaluations.
 struct EvaluationFormView: View {
-    @ObservedObject var motionViewModel: MotionArchiveViewModel
-    let noteToEvaluate: CaseBuildingNoteModel
-    
+
+    // MARK: - Mario - Properties
+
+    @ObservedObject var viewModel: EvaluationViewModel
+    let room: SparringRoomModel
     @Environment(\.dismiss) var dismiss
-    
-    @State private var matterScore: Double = 75
-    @State private var mannerScore: Double = 75
-    @State private var methodScore: Double = 75
-    @State private var feedbackText: String = ""
-    @State private var isSubmitting = false
-    
-    var body: some View {
-        Form {
-            Section(header: Text("Argumen Debater").font(.caption.bold())) {
-                Text(noteToEvaluate.argumentsRichText)
-                    .font(.system(.body, design: .serif))
-                    .padding(.vertical, 8)
-            }
-            .listRowBackground(Color.white)
-            
-            Section(header: Text("Rubrik Penilaian (1-100)").font(.caption.bold())) {
-                VStack(alignment: .leading) {
-                    Text("Matter (Isi & Logika): \(Int(matterScore))").font(.subheadline.bold())
-                    Slider(value: $matterScore, in: 60...90, step: 1).tint(Color.btnPositive)
-                }
-                .padding(.vertical, 4)
-                
-                VStack(alignment: .leading) {
-                    Text("Manner (Gaya & Penyampaian): \(Int(mannerScore))").font(.subheadline.bold())
-                    Slider(value: $mannerScore, in: 60...90, step: 1).tint(Color.accentWalnut)
-                }
-                .padding(.vertical, 4)
-                
-                VStack(alignment: .leading) {
-                    Text("Method (Struktur & Respons): \(Int(methodScore))").font(.subheadline.bold())
-                    Slider(value: $methodScore, in: 60...90, step: 1).tint(Color.btnNeutral)
-                }
-                .padding(.vertical, 4)
-            }
-            .listRowBackground(Color.white)
-            
-            Section(header: Text("Komentar Juri").font(.caption.bold())) {
-                TextEditor(text: $feedbackText)
-                    .frame(minHeight: 120)
-            }
-            .listRowBackground(Color.white)
-            
-            Button(action: submitEvaluation) {
-                HStack {
-                    Spacer()
-                    if isSubmitting {
-                        ProgressView().tint(.white)
-                    } else {
-                        Text("Kirim Hasil Evaluasi").fontWeight(.bold)
-                    }
-                    Spacer()
-                }
-                .foregroundStyle(.white)
-            }
-            .listRowBackground(feedbackText.isEmpty ? Color.gray : Color.btnPositive)
-            .disabled(feedbackText.isEmpty || isSubmitting)
-        }
-        .scrollContentBackground(.hidden)
-        .background(Color.bgCream)
-        .navigationTitle("Evaluasi Kasus")
-        .navigationBarTitleDisplayMode(.inline)
+    @EnvironmentObject var authVM: AuthViewModel
+
+    @State private var narrativeFeedback: String = ""
+    @State private var speakerScores: [String: Int] = [:]
+
+    // MARK: - Mario - Computed Properties (Logic)
+
+    private var isFeedbackEmpty: Bool {
+        narrativeFeedback.trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty
     }
-    
-    private func submitEvaluation() {
-        isSubmitting = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            if let index = motionViewModel.savedNotes.firstIndex(where: { $0.id == noteToEvaluate.id }) {
-                motionViewModel.savedNotes[index].isFeedbackRequested = false
+
+    private var submitButtonColor: Color {
+        isFeedbackEmpty ? Color.gray : Color.btnPositive
+    }
+
+    private var activeParticipants: [ParticipantModel] {
+        room.participants
+    }
+
+    // MARK: - Mario - Body
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.bgCream.ignoresSafeArea()
+
+                Form {
+                    scoreSection
+                    feedbackSection
+                }
+                .scrollContentBackground(.hidden)
             }
-            isSubmitting = false
+            .navigationTitle("Score Sheet")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    cancelButton
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    submitButton
+                }
+            }
+        }
+    }
+
+    // MARK: - Mario - UI Sub-Components (View Extraction)
+
+    private var scoreSection: some View {
+        Section(header: Text("Debater Scores (50-100)").font(.caption.bold())) {
+            ForEach(activeParticipants, id: \.userId) { participant in
+                scoreRow(for: participant)
+            }
+        }
+        .listRowBackground(Color.white)
+    }
+
+    private var feedbackSection: some View {
+        Section(header: Text("Narrative Feedback").font(.caption.bold())) {
+            TextEditor(text: $narrativeFeedback)
+                .frame(minHeight: 150)
+        }
+        .listRowBackground(Color.white)
+    }
+
+    private func scoreRow(for participant: ParticipantModel) -> some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text(participant.userId)
+                    .font(.body.bold())
+                    .foregroundStyle(Color.textCharcoal)
+                Text(participant.roleSlot.rawValue)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            TextField(
+                "Score",
+                value: scoreBinding(for: participant.userId),
+                format: .number
+            )
+            .keyboardType(.numberPad)
+            .multilineTextAlignment(.trailing)
+            .frame(width: 60)
+            .padding(8)
+            .background(Color.gray.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
+    private var cancelButton: some View {
+        Button("Cancel") {
             dismiss()
         }
+        .foregroundStyle(Color.btnNegative)
     }
+
+    private var submitButton: some View {
+        Button("Submit") {
+            processSubmission()
+        }
+        .fontWeight(.bold)
+        .foregroundStyle(submitButtonColor)
+        .disabled(isFeedbackEmpty)
+    }
+
+    // MARK: - Mario - Methods
+
+    private func processSubmission() {
+        let adjudicatorId = authVM.currentUser?.name ?? "Anonymous Adjudicator"
+
+        viewModel.submitSparringEvaluation(
+            room: room,
+            adjudicatorId: adjudicatorId,
+            feedback: narrativeFeedback,
+            rawScores: speakerScores
+        )
+        dismiss()
+    }
+
+    private func scoreBinding(for key: String) -> Binding<Int> {
+        return Binding(
+            get: { speakerScores[key] ?? 75 },
+            set: { speakerScores[key] = $0 }
+        )
+    }
+}
+
+// MARK: - Mario - Preview
+
+#Preview {
+    EvaluationFormView(
+        viewModel: EvaluationViewModel(),
+        room: SparringRoomModel(
+            id: "1",
+            hostId: "u1",
+            scheduledTime: Date(),
+            motionCategory: "Test",
+            specialNotes: "",
+            meetingLink: "",
+            accessType: .publicAccess,
+            state: .ongoing,
+            participants: [
+                ParticipantModel(
+                    userId: "User 1",
+                    roleSlot: .openingGovt,
+                    regMode: .solo
+                ),
+                ParticipantModel(
+                    userId: "User 2",
+                    roleSlot: .openingOpp,
+                    regMode: .solo
+                ),
+            ],
+            isAdjudicatorNeeded: true
+        )
+    )
+    .environmentObject(AuthViewModel())
 }
