@@ -2,30 +2,34 @@
 //  ProvideFeedbackSheet.swift
 //  YukDebat
 //
-//  Created by Mario Ruby Ariesusandi  on 01-06-2026.
-//
 
 import SwiftUI
 
 /// A bottom sheet form for Adjudicators to write and submit feedback.
 struct ProvideFeedbackSheet: View {
-
-    // MARK: - Mario - Properties
-
+    // MARK: - Properties
     let note: CaseBuildingNoteModel
     @ObservedObject var evalVM: EvaluationViewModel
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authVM: AuthViewModel
 
-    @State private var feedbackText = ""
+    @State private var feedbackText: String
+    @State private var isSubmitting = false
+    @State private var errorMessage: String? = nil
 
-    // MARK: - Mario - Body
+    // MARK: - Initialization (BUG FIX FORM KOSONG)
+    init(note: CaseBuildingNoteModel, evalVM: EvaluationViewModel) {
+        self.note = note
+        self.evalVM = evalVM
+        // Paksa state terisi sejak awal sebelum View dirender
+        _feedbackText = State(initialValue: note.feedbackText ?? "")
+    }
 
+    // MARK: - Body
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.bgCream.ignoresSafeArea()
-
                 Form {
                     Section(
                         header: Text("Debater Note Details").font(
@@ -49,10 +53,21 @@ struct ProvideFeedbackSheet: View {
                             .frame(minHeight: 150)
                     }
                     .listRowBackground(Color.white)
+
+                    if let error = errorMessage {
+                        Section {
+                            Text(error).font(.caption).foregroundStyle(
+                                Color.btnNegative
+                            )
+                        }
+                        .listRowBackground(Color.clear)
+                    }
                 }
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Evaluate Note")
+            .navigationTitle(
+                note.feedbackText == nil ? "Evaluate Note" : "Edit Feedback"
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -61,28 +76,44 @@ struct ProvideFeedbackSheet: View {
                     )
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Submit") {
-                        let juriName =
-                            authVM.currentUser?.name ?? "Anonymous Adjudicator"
-                        evalVM.submitFeedback(
-                            noteId: note.id,
-                            feedbackText: feedbackText,
-                            providerName: juriName
-                        )
-                        dismiss()
+                    Button(action: submitAction) {
+                        if isSubmitting {
+                            ProgressView()
+                        } else {
+                            Text("Submit").fontWeight(.bold)
+                        }
                     }
-                    .fontWeight(.bold)
                     .foregroundStyle(
                         feedbackText.trimmingCharacters(
                             in: .whitespacesAndNewlines
-                        ).isEmpty ? Color.gray : Color.purple
+                        ).isEmpty || isSubmitting ? Color.gray : Color.purple
                     )
                     .disabled(
                         feedbackText.trimmingCharacters(
                             in: .whitespacesAndNewlines
-                        ).isEmpty
+                        ).isEmpty || isSubmitting
                     )
                 }
+            }
+        }
+    }
+
+    // MARK: - Logic
+    private func submitAction() {
+        isSubmitting = true
+        errorMessage = nil
+        let juriName = authVM.currentUser?.name ?? "Anonymous Adjudicator"
+
+        evalVM.submitFeedback(
+            noteId: note.id,
+            feedbackText: feedbackText,
+            providerName: juriName
+        ) { success, error in
+            isSubmitting = false
+            if success {
+                dismiss()
+            } else {
+                errorMessage = error ?? "Failed to save feedback."
             }
         }
     }

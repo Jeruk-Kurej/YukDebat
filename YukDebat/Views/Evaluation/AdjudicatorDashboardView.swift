@@ -2,16 +2,10 @@
 //  AdjudicatorDashboardView.swift
 //  YukDebat
 //
-//  Created by Mario Ruby Ariesusandi  on 29-05-2026.
-//
 
 import SwiftUI
 
-/// The central workspace for Adjudicators to review debater case building notes.
 struct AdjudicatorDashboardView: View {
-
-    // MARK: - Mario - Properties
-
     @ObservedObject var motionViewModel: MotionArchiveViewModel
     @StateObject private var evalVM = EvaluationViewModel()
     @EnvironmentObject var authVM: AuthViewModel
@@ -19,13 +13,10 @@ struct AdjudicatorDashboardView: View {
     @State private var selectedNote: CaseBuildingNoteModel? = nil
     @State private var selectedTab = 0
 
-    // MARK: - Mario - Body
-
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.bgCream.ignoresSafeArea()
-
                 VStack(spacing: 0) {
                     Picker("Adjudicator Tabs", selection: $selectedTab) {
                         Text("Needs Review").tag(0)
@@ -36,26 +27,17 @@ struct AdjudicatorDashboardView: View {
                     .padding(.vertical, 8)
                     .background(Color.bgCream)
 
-                    ScrollView {
+                    ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 16) {
+                            // BUG FIX: Memastikan Tab 0 menampilkan Pending Card
                             if selectedTab == 0 {
                                 if evalVM.pendingRequests.isEmpty {
-                                    VStack(spacing: 16) {
-                                        Image(systemName: "checkmark.seal.fill")
-                                            .font(.system(size: 60))
-                                            .foregroundStyle(
-                                                .purple.opacity(0.5)
-                                            )
-                                        Text("All caught up!").font(
-                                            .title3.bold()
-                                        )
-                                        Text(
+                                    emptyStateView(
+                                        icon: "checkmark.seal.fill",
+                                        title: "All caught up!",
+                                        desc:
                                             "No review requests from debaters at the moment."
-                                        ).font(.subheadline).foregroundStyle(
-                                            .secondary
-                                        ).multilineTextAlignment(.center)
-                                    }
-                                    .padding(.top, 80)
+                                    )
                                 } else {
                                     ForEach(evalVM.pendingRequests) { note in
                                         Button(action: { selectedNote = note })
@@ -66,24 +48,26 @@ struct AdjudicatorDashboardView: View {
                                     }
                                 }
                             } else {
+                                // BUG FIX: Memastikan Tab 1 menampilkan History Card
                                 if evalVM.historyRequests.isEmpty {
-                                    VStack(spacing: 16) {
-                                        Image(systemName: "clock.fill").font(
-                                            .system(size: 60)
-                                        ).foregroundStyle(.gray.opacity(0.5))
-                                        Text("No history yet.").font(
-                                            .title3.bold()
-                                        )
-                                        Text(
+                                    emptyStateView(
+                                        icon: "clock.fill",
+                                        title: "No history yet.",
+                                        desc:
                                             "You haven't provided feedback on any notes."
-                                        ).font(.subheadline).foregroundStyle(
-                                            .secondary
-                                        ).multilineTextAlignment(.center)
-                                    }
-                                    .padding(.top, 80)
+                                    )
                                 } else {
                                     ForEach(evalVM.historyRequests) { note in
-                                        AdjudicatorHistoryCard(note: note)
+                                        NavigationLink(
+                                            destination: NoteDetailView(
+                                                viewModel: motionViewModel,
+                                                note: note,
+                                                isAdjudicatorContext: true
+                                            )
+                                        ) {
+                                            AdjudicatorHistoryCard(note: note)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
                                     }
                                 }
                             }
@@ -101,11 +85,33 @@ struct AdjudicatorDashboardView: View {
                     evalVM.fetchEvaluationHistory(providerName: juriName)
                 }
             }
+            .onChange(of: authVM.currentUser?.name) { newName in
+                if let juriName = newName {
+                    evalVM.fetchEvaluationHistory(providerName: juriName)
+                }
+            }
             .sheet(item: $selectedNote) { note in
                 ProvideFeedbackSheet(note: note, evalVM: evalVM)
                     .environmentObject(authVM)
             }
         }
+    }
+
+    // Sub-view kecil agar kode tetap rapi
+    @ViewBuilder
+    private func emptyStateView(icon: String, title: String, desc: String)
+        -> some View
+    {
+        VStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 60))
+                .foregroundStyle(.purple.opacity(0.5))
+            Text(title).font(.title3.bold())
+            Text(desc)
+                .font(.subheadline).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.top, 80)
     }
 }
 

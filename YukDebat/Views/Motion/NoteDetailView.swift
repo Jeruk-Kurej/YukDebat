@@ -2,33 +2,30 @@
 //  NoteDetailView.swift
 //  YukDebat
 //
-//  Created by Hanzelius Kwan on 29/05/26.
-//
 
 import FirebaseAuth
 import SwiftUI
 
 struct NoteDetailView: View {
-
     // MARK: - Properties
-
     @ObservedObject var viewModel: MotionArchiveViewModel
     let note: CaseBuildingNoteModel
+    var isAdjudicatorContext: Bool = false
+    @EnvironmentObject var authVM: AuthViewModel
 
-    @State private var showingEditSheet = false
+    @State private var showingNoteEditSheet = false
+    @State private var showingFeedbackEditSheet = false
 
     // MARK: - Computed Properties
-
     var latestNote: CaseBuildingNoteModel {
-        viewModel.myNotes.first { $0.id == note.id } ?? note
+        viewModel.myNotes.first { $0.id == note.id } ?? viewModel.communityNotes
+            .first { $0.id == note.id } ?? note
     }
 
     // MARK: - Body
-
     var body: some View {
         ZStack {
             Color.bgCream.ignoresSafeArea()
-
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
                     headerView
@@ -40,19 +37,27 @@ struct NoteDetailView: View {
                 .padding(24)
             }
         }
-        .navigationTitle("Note Details")
+        .navigationTitle(
+            isAdjudicatorContext ? "Review Details" : "Note Details"
+        )
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            // FIX: Hanya tampilkan tombol edit jika pemilik note
-            if latestNote.ownerId == Auth.auth().currentUser?.uid {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Edit") { showingEditSheet = true }
+            // BUG FIX: Gunakan .topBarTrailing agar styling-nya murni teks (konsisten)!
+            if isAdjudicatorContext {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Edit Feedback") { showingFeedbackEditSheet = true }
+                        .fontWeight(.bold)
+                        .foregroundStyle(.purple)
+                }
+            } else if latestNote.ownerId == authVM.currentUser?.id {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Edit Note") { showingNoteEditSheet = true }
                         .fontWeight(.bold)
                         .foregroundStyle(Color.btnPositive)
                 }
             }
         }
-        .sheet(isPresented: $showingEditSheet) {
+        .sheet(isPresented: $showingNoteEditSheet) {
             NavigationStack {
                 NoteEditorView(
                     viewModel: viewModel,
@@ -61,9 +66,16 @@ struct NoteDetailView: View {
                 )
             }
         }
+        .sheet(isPresented: $showingFeedbackEditSheet) {
+            ProvideFeedbackSheet(
+                note: latestNote,
+                evalVM: EvaluationViewModel()
+            )
+            .environmentObject(authVM)
+        }
     }
 
-    // MARK: - Sub-Views (Mencegah Compile Error)
+    // MARK: - Sub-Views
 
     @ViewBuilder
     private var headerView: some View {
@@ -110,7 +122,6 @@ struct NoteDetailView: View {
             Text("Case Building Note").font(.headline).foregroundStyle(
                 Color.accentWalnut
             )
-
             if latestNote.argumentsRichText.isEmpty {
                 Text("No arguments or notes written yet.")
                     .font(.body).foregroundStyle(.gray.opacity(0.8)).italic()
@@ -143,29 +154,34 @@ struct NoteDetailView: View {
                     )
             }
         } else if latestNote.visibility == .publicAccess {
-            Button(action: {
-                withAnimation { viewModel.requestFeedback(for: latestNote.id) }
-            }) {
-                HStack {
-                    Image(
-                        systemName: latestNote.isFeedbackRequested
-                            ? "hourglass" : "paperplane.fill"
-                    )
-                    Text(
+            if !isAdjudicatorContext {
+                Button(action: {
+                    withAnimation {
+                        viewModel.requestFeedback(for: latestNote.id)
+                    }
+                }) {
+                    HStack {
+                        Image(
+                            systemName: latestNote.isFeedbackRequested
+                                ? "hourglass" : "paperplane.fill"
+                        )
+                        Text(
+                            latestNote.isFeedbackRequested
+                                ? "Waiting for Adjudicator Feedback..."
+                                : "Request Adjudicator Feedback"
+                        )
+                    }
+                    .font(.headline).foregroundStyle(.white).frame(
+                        maxWidth: .infinity
+                    ).padding()
+                    .background(
                         latestNote.isFeedbackRequested
-                            ? "Waiting for Adjudicator Feedback..."
-                            : "Request Adjudicator Feedback"
+                            ? Color.gray : Color.purple
                     )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                .font(.headline).foregroundStyle(.white).frame(
-                    maxWidth: .infinity
-                ).padding()
-                .background(
-                    latestNote.isFeedbackRequested ? Color.gray : Color.purple
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .disabled(latestNote.isFeedbackRequested)
             }
-            .disabled(latestNote.isFeedbackRequested)
         }
     }
 }

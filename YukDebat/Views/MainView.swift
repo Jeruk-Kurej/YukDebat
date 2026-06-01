@@ -29,7 +29,7 @@ struct MainView: View {
                 // REVISI: Menu Khusus Juri
                 if authVM.currentUser?.role == .adjudicator {
                     AdjudicatorDashboardView(motionViewModel: motionVM)
-                        .tabItem { Label("Judge", systemImage: "gavel") }
+                        .tabItem { Label("Judge", systemImage: "hammer.fill") }
                 }
                 
                 // REVISI: Menu Khusus Admin
