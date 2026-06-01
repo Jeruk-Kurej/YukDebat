@@ -66,10 +66,22 @@ class SparringViewModel: ObservableObject {
     }
 
     func submitRoomForm() {
+        // 1. RESET STATE ERROR SEBELUM MULAI
+        self.errorMessage = nil
+        self.alertMessage = nil
+
         guard !formMeetingLink.isEmpty else {
             self.errorMessage = "Meeting Link tidak boleh kosong."
             return
         }
+
+        // 2. KASIH TOLERANSI WAKTU 2 MENIT
+        // Jadi kalau kamu ngisi formnya kelamaan, sistem tetap maklum dan gak nembak error
+        guard formScheduledTime >= Date().addingTimeInterval(-120) else {
+            self.errorMessage = "Waktu sparring tidak boleh di masa lalu."
+            return
+        }
+
         let newRoom = SparringRoomModel(
             id: UUID().uuidString,
             hostId: self.currentUserId,
@@ -83,9 +95,17 @@ class SparringViewModel: ObservableObject {
             participants: [],
             isAdjudicatorNeeded: true
         )
+
         self.lobbyRooms.insert(newRoom, at: 0)
+
+        // 3. TUTUP FORM & BERSIHKAN DATA UNTUK PEMBUATAN ROOM SELANJUTNYA
         self.isShowingCreateRoom = false
         self.formMotionTitle = ""
+        self.formMeetingLink = ""
+        self.formSpecialNotes = ""
+        self.formScheduledTime = Date()  // Reset jam ke waktu sekarang
+        self.formIsPrivate = false
+
         self.alertMessage = "Ruang sparring berhasil dibuat!"
     }
 
@@ -177,12 +197,22 @@ class SparringViewModel: ObservableObject {
         // Logika ini dipasang di submitRoomForm:
         // guard formScheduledTime > Date() else { /* Tampilkan error */ }
     }
+
     func checkAndCancelExpiredRooms() {
         let now = Date()
-        // Loop melalui lobbyRooms dan batalkan yang waktunya sudah lewat
+
         for i in 0..<lobbyRooms.count {
-            if lobbyRooms[i].scheduledTime < now && lobbyRooms[i].state == .preparing {
-                lobbyRooms[i].state = .cancelled
+            // Jika waktu sudah lewat (atau pas) dan status masih PREPARING
+            if lobbyRooms[i].scheduledTime <= now
+                && lobbyRooms[i].state == .preparing
+            {
+                if lobbyRooms[i].participants.isEmpty {
+                    // Tidak ada orang = Batal otomatis
+                    lobbyRooms[i].state = .cancelled
+                } else {
+                    // Ada orang = Mulai otomatis
+                    lobbyRooms[i].state = .ongoing
+                }
             }
         }
     }

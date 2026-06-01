@@ -9,7 +9,6 @@ import SwiftUI
 
 /// A form view that allows users to create and schedule a new sparring room.
 struct CreateSparringFormView: View {
-
     @ObservedObject var viewModel: SparringViewModel
     @Environment(\.dismiss) var dismiss
 
@@ -17,38 +16,68 @@ struct CreateSparringFormView: View {
         NavigationStack {
             ZStack {
                 Color.bgCream.ignoresSafeArea()
-
                 Form {
-                    Section(header: Text("Motion & Schedule Details").font(.caption.bold())) {
-                        TextField("Ketik Judul/Topik Mosi *", text: $viewModel.formMotionTitle, axis: .vertical)
-                            .lineLimit(2...4)
+                    Section(
+                        header: Text("Motion & Schedule Details").font(
+                            .caption.bold()
+                        )
+                    ) {
+                        TextField(
+                            "Ketik Judul/Topik Mosi *",
+                            text: $viewModel.formMotionTitle,
+                            axis: .vertical
+                        )
+                        .lineLimit(2...4)
 
-                        DatePicker("Scheduled Time *", selection: $viewModel.formScheduledTime, displayedComponents: [.date, .hourAndMinute])
-                            .datePickerStyle(.compact)
-                            .environment(\.locale, Locale(identifier: "id_ID"))
+                        // REVISI: Tambahkan in: Date()... agar tidak bisa pilih waktu lampau
+                        DatePicker(
+                            "Scheduled Time *",
+                            selection: $viewModel.formScheduledTime,
+                            in: Date()...,  // <--- INI KUNCI UTAMANYA!
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .datePickerStyle(.compact)
+                        .environment(\.locale, Locale(identifier: "id_ID"))
                     }
                     .listRowBackground(Color.white)
 
-                    Section(header: Text("Meeting Information").font(.caption.bold())) {
-                        TextField("Zoom/Google Meet Link *", text: $viewModel.formMeetingLink)
-                            .keyboardType(.URL).textInputAutocapitalization(.never)
-
-                        TextField("Additional Notes (Optional)", text: $viewModel.formSpecialNotes)
-                        Toggle("Make Room Private", isOn: $viewModel.formIsPrivate).tint(Color.btnPositive)
+                    Section(
+                        header: Text("Meeting Information").font(
+                            .caption.bold()
+                        )
+                    ) {
+                        TextField(
+                            "Zoom/Google Meet Link *",
+                            text: $viewModel.formMeetingLink
+                        )
+                        .keyboardType(.URL).textInputAutocapitalization(.never)
+                        TextField(
+                            "Additional Notes (Optional)",
+                            text: $viewModel.formSpecialNotes
+                        )
+                        Toggle(
+                            "Make Room Private",
+                            isOn: $viewModel.formIsPrivate
+                        ).tint(Color.btnPositive)
                     }
                     .listRowBackground(Color.white)
 
                     Button(action: {
-                        viewModel.submitRoomForm()
-                        dismiss()
+                        viewModel.submitRoomForm() 
                     }) {
                         Text("Create Sparring Room")
                             .font(.headline)
-                            .foregroundStyle(viewModel.formMeetingLink.isEmpty ? Color.gray : .white)
+                            .foregroundStyle(
+                                viewModel.formMeetingLink.isEmpty
+                                    ? Color.gray : .white
+                            )
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                     .disabled(viewModel.formMeetingLink.isEmpty)
-                    .listRowBackground(viewModel.formMeetingLink.isEmpty ? Color.gray.opacity(0.15) : Color.btnPositive)
+                    .listRowBackground(
+                        viewModel.formMeetingLink.isEmpty
+                            ? Color.gray.opacity(0.15) : Color.btnPositive
+                    )
                 }
                 .scrollContentBackground(.hidden)
             }
@@ -56,7 +85,9 @@ struct CreateSparringFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Color.btnNegative)
+                    Button("Cancel") { dismiss() }.foregroundStyle(
+                        Color.btnNegative
+                    )
                 }
             }
         }

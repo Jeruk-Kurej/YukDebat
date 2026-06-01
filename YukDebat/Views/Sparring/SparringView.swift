@@ -5,6 +5,7 @@
 //  Created by Keane Juan Suryanto on 01/06/26.
 //
 
+import Combine
 import SwiftUI
 
 /// Renders the Sparring Lobby UI (UC02).
@@ -14,6 +15,9 @@ struct SparringView: View {
     // MARK: - Properties
 
     @ObservedObject var viewModel: SparringViewModel
+
+    // TAHAP 1: Deklarasi Timer yang berdetak setiap 5 detik
+    let timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
     // MARK: - Initialization
 
@@ -70,7 +74,13 @@ struct SparringView: View {
             .navigationTitle("Sparring Lobby")
             .onAppear {
                 viewModel.listenToRoom(roomId: "dummy_id")
-                viewModel.checkAndCancelExpiredRooms() // <--- Auto-cancel di sini
+                viewModel.checkAndCancelExpiredRooms()  // Cek saat pertama buka
+            }
+            // TAHAP 2: Deteksi detak timer untuk update UI secara real-time
+            .onReceive(timer) { _ in
+                withAnimation {
+                    viewModel.checkAndCancelExpiredRooms()
+                }
             }
             .sheet(isPresented: $viewModel.isShowingCreateRoom) {
                 CreateSparringFormView(viewModel: viewModel)
