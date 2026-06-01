@@ -7,16 +7,21 @@
 
 import SwiftUI
 
+/// Displays a centralized board for debate competitions.
 struct CompetitionView: View {
+    
+    // MARK: - Properties
+    
     @StateObject private var viewModel = CompetitionViewModel()
     @State private var showUploadForm = false
 
+    // MARK: - Body
+    
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottomTrailing) {
                 Color.bgCream.ignoresSafeArea()
 
-                // REVISI: Logika jika 100% kosong, taruh teks di tengah
                 if viewModel.activeCompetitions.isEmpty && viewModel.myPendingCompetitions.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "trophy")
@@ -33,7 +38,11 @@ struct CompetitionView: View {
                         VStack(spacing: 24) {
                             if !viewModel.myPendingCompetitions.isEmpty {
                                 VStack(alignment: .leading) {
-                                    Text("Pending Admin Approval").font(.headline).foregroundStyle(Color.textCharcoal).padding(.horizontal, 24)
+                                    Text("Pending Admin Approval")
+                                        .font(.headline)
+                                        .foregroundStyle(Color.textCharcoal)
+                                        .padding(.horizontal, 24)
+                                    
                                     ForEach(viewModel.myPendingCompetitions) { comp in
                                         CompetitionCard(comp: comp, isPending: true)
                                     }
@@ -42,7 +51,11 @@ struct CompetitionView: View {
 
                             if !viewModel.activeCompetitions.isEmpty {
                                 VStack(alignment: .leading) {
-                                    Text("Latest Competitions").font(.headline).foregroundStyle(Color.textCharcoal).padding(.horizontal, 24)
+                                    Text("Latest Competitions")
+                                        .font(.headline)
+                                        .foregroundStyle(Color.textCharcoal)
+                                        .padding(.horizontal, 24)
+                                    
                                     ForEach(viewModel.activeCompetitions) { comp in
                                         CompetitionCard(comp: comp, isPending: false)
                                     }
@@ -55,15 +68,24 @@ struct CompetitionView: View {
                 }
 
                 Button(action: { showUploadForm = true }) {
-                    Image(systemName: "plus").font(.title2.bold()).foregroundStyle(.white).frame(width: 60, height: 60)
-                        .background(Color.btnPositive).clipShape(Circle()).shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    Image(systemName: "plus")
+                        .font(.title2.bold())
+                        .foregroundStyle(.white)
+                        .frame(width: 60, height: 60)
+                        .background(Color.btnPositive)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
                 }
-                .padding(.trailing, 24).padding(.bottom, 110)
+                .padding(.trailing, 24)
+                .padding(.bottom, 110)
             }
             .navigationTitle("Competitions")
             .onAppear { viewModel.fetchCompetitions() }
-            .sheet(isPresented: $showUploadForm) { UploadFormCompetition(viewModel: viewModel) }
-            .modernToast(message: $viewModel.statusMessage, isError: viewModel.statusMessage?.contains("Failed") == true)
+            .sheet(isPresented: $showUploadForm) {
+                UploadFormCompetition(viewModel: viewModel)
+            }
+            // MENGGUNAKAN computed property hasError AGAR COMPILER TIDAK BINGUNG
+            .modernToast(message: $viewModel.statusMessage, isError: viewModel.hasError)
         }
     }
 }

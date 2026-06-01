@@ -9,130 +9,113 @@ import Combine
 import FirebaseAuth
 import FirebaseFirestore
 import Foundation
-import SwiftUI
-import UIKit
 
-/// Handles the business logic for creating and displaying Debate Competitions.
+/// Manages the fetching of competitions and handles promoter submissions.
 class CompetitionViewModel: ObservableObject {
-
-    // MARK: - Published Properties (State)
+    
+    // MARK: - Published Properties (UI State)
+    
     @Published var activeCompetitions: [CompetitionModel] = []
     @Published var myPendingCompetitions: [CompetitionModel] = []
-
-    // MARK: - Published Properties (Form Data)
+    
+    // Form Properties
     @Published var name: String = ""
     @Published var desc: String = ""
     @Published var selectedImageData: Data? = nil
-
-    // MARK: - Published Properties (UI Feedback)
-    @Published var statusMsg: String? = nil
+    
+    // Status Properties
     @Published var isLoading: Bool = false
-    @Published var isUploadSuccess: Bool = false
-
+    @Published var statusMessage: String? = nil
+    
+    // MARK: - Computed Properties
+    
+    /// Menentukan apakah Toast harus berwarna merah (Error) atau hijau (Success)
+    var hasError: Bool {
+        return statusMessage?.contains("Failed") ?? false
+    }
+    
     // MARK: - Private Properties
+    
     private let db = Firestore.firestore()
-
+    
     // MARK: - Methods
-    /// Fetches all active competitions and the current user's pending competitions.
+    
     func fetchCompetitions() {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
-
-        db.collection("competitions").whereField("status", isEqualTo: "ACTIVE")
-            .addSnapshotListener { snapshot, _ in
-                guard let docs = snapshot?.documents else { return }
-                self.activeCompetitions = docs.compactMap {
-                    self.mapToModel(doc: $0)
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("competitions").addSnapshotListener { [weak self] snapshot, _ in
+            guard let docs = snapshot?.documents else { return }
+            
+            var active: [CompetitionModel] = []
+            var pending: [CompetitionModel] = []
+            
+            for doc in docs {
+                let data = doc.data()
+                let statusStr = data["status"] as? String ?? "PENDING"
+                let status = ReviewStatus(rawValue: statusStr) ?? .pending
+                let promoterId = data["promoterId"] as? String ?? ""
+                
+                let model = CompetitionModel(
+                    id: doc.documentID,
+                    promoterId: promoterId,
+                    promoterEmail: data["promoterEmail"] as? String ?? "",
+                    name: data["name"] as? String ?? "",
+                    description: data["description"] as? String ?? "",
+                    eventDate: (data["eventDate"] as? Timestamp)?.dateValue() ?? Date(),
+                    registrationUrl: data["registrationUrl"] as? String ?? "",
+                    posterStorageUrl: data["posterUrl"] as? String ?? "",
+                    status: status
+                )
+                
+                if status == .active {
+                    active.append(model)
+                } else if status == .pending && promoterId == userId {
+                    pending.append(model)
                 }
             }
-
-        db.collection("competitions")
-            .whereField("promoterId", isEqualTo: currentUserId)
-            .whereField("status", isEqualTo: "PENDING")
-            .addSnapshotListener { snapshot, _ in
-                guard let docs = snapshot?.documents else { return }
-                self.myPendingCompetitions = docs.compactMap {
-                    self.mapToModel(doc: $0)
-                }
-            }
-    }
-
-    /// Helper method to safely map Firestore documents to `CompetitionModel`.
-    private func mapToModel(doc: QueryDocumentSnapshot) -> CompetitionModel {
-        let data = doc.data()
-        return CompetitionModel(
-            id: doc.documentID,
-            promoterId: data["promoterId"] as? String ?? "",
-            promoterEmail: data["promoterEmail"] as? String ?? "Unknown Email",
-            name: data["name"] as? String ?? "",
-            description: data["description"] as? String ?? "",
-            eventDate: (data["eventDate"] as? Timestamp)?.dateValue() ?? Date(),
-            registrationUrl: data["registrationUrl"] as? String ?? "",
-            posterStorageUrl: data["posterUrl"] as? String ?? "",
-            status: ReviewStatus(
-                rawValue: data["status"] as? String ?? "PENDING"
-            ) ?? .pending
-        )
-    }
-
-    /// Processes image data, compresses it to Base64, and uploads the competition record.
-    func submitCompetitionData() {
-        guard let currentUserId = Auth.auth().currentUser?.uid,
-            let userEmail = Auth.auth().currentUser?.email, !userEmail.isEmpty
-        else {
-            self.statusMsg = "Akses ditolak: Akun/Email tidak valid."
-            return
-        }
-
-        guard let imageData = selectedImageData else {
-            self.statusMsg = "Select a poster image first!"
-            return
-        }
-
-        isLoading = true
-        self.statusMsg = "Uploading competition..."
-
-        let newDocRef = db.collection("competitions").document()
-
-        guard let uiImage = UIImage(data: imageData),
-            let compressedData = uiImage.jpegData(compressionQuality: 0.1)
-        else {
-            self.statusMsg = "Failed to process image."
-            self.isLoading = false
-            return
-        }
-
-        let base64String = compressedData.base64EncodedString()
-        let data: [String: Any] = [
-            "id": newDocRef.documentID,
-            "promoterId": currentUserId,
-            "promoterEmail": userEmail,
-            "name": self.name,
-            "description": self.desc,
-            "posterUrl": base64String,
-            "status": "PENDING",
-            "eventDate": Timestamp(date: Date().addingTimeInterval(864000)),
-            "registrationUrl": "https://forms.gle/dummy",
-        ]
-
-        newDocRef.setData(data) { error in
+            
             DispatchQueue.main.async {
-                self.isLoading = false
-                if let error = error {
-                    self.statusMsg =
-                        "Failed to save: \(error.localizedDescription)"
-                } else {
-                    self.statusMsg = "Successfully submitted! Pending approval."
-                    self.isUploadSuccess = true
-                    self.resetForm()
-                }
+                self?.activeCompetitions = active
+                self?.myPendingCompetitions = pending
             }
         }
     }
-
-    /// Clears form fields upon successful submission.
-    private func resetForm() {
-        self.name = ""
-        self.desc = ""
-        self.selectedImageData = nil
+    
+    func submitCompetitionData() {
+        guard let userId = Auth.auth().currentUser?.uid,
+              let userEmail = Auth.auth().currentUser?.email else { return }
+        
+        isLoading = true
+        let compId = UUID().uuidString
+        
+        // Menggunakan kompresi Base64 sebagai workaround sementara Firebase Storage
+        let base64Image = selectedImageData?.base64EncodedString() ?? ""
+        
+        let data: [String: Any] = [
+            "id": compId,
+            "promoterId": userId,
+            "promoterEmail": userEmail,
+            "name": name,
+            "description": desc,
+            "eventDate": Timestamp(date: Date().addingTimeInterval(86400 * 30)),
+            "registrationUrl": "",
+            "posterUrl": base64Image,
+            "status": ReviewStatus.pending.rawValue
+        ]
+        
+        db.collection("competitions").document(compId).setData(data) { [weak self] error in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                if let error = error {
+                    self?.statusMessage = "Failed to submit: \(error.localizedDescription)"
+                } else {
+                    self?.statusMessage = "Competition submitted for Admin review!"
+                    // Kosongkan form setelah sukses
+                    self?.name = ""
+                    self?.desc = ""
+                    self?.selectedImageData = nil
+                }
+            }
+        }
     }
 }
