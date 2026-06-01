@@ -29,11 +29,7 @@ struct AdminAdjudicatorRow: View {
                 base64Encoded: req.certificateUrl,
                 options: .ignoreUnknownCharacters
             ),
-                let uiImage = UIImage(data: imageData)
-            {
-                Image(uiImage: uiImage).resizable().scaledToFill()
-                    .frame(height: 150).frame(maxWidth: .infinity).clipped()
-            }
+               RemoteImageView(source: req.certificateUrl)
 
             Text(req.experience).font(.subheadline).foregroundStyle(.secondary)
                 .padding(.horizontal, 16)

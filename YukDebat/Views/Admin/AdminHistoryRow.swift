@@ -23,8 +23,7 @@ struct AdminHistoryRow: View {
                 } else if let imageData = Data(
                     base64Encoded: comp.posterStorageUrl,
                     options: .ignoreUnknownCharacters
-                ), let uiImage = UIImage(data: imageData) {
-                    Image(uiImage: uiImage).resizable().scaledToFill()
+                ), RemoteImageView(source: req.certificateUrl)
                 } else {
                     Color.gray.opacity(0.2)
                 }
@@ -55,7 +54,7 @@ struct AdminHistoryRow: View {
         )
         .padding(.horizontal, 20)
     }
-}
+
 #Preview {
     AdminHistoryRow(
         comp: CompetitionModel(
