@@ -2,38 +2,44 @@
 //  CreateSparringFormView.swift
 //  YukDebat
 //
-//  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
+//  Created by Keane Juan Suryanto on 01/06/26.
 //
 
 import SwiftUI
 
+/// A form view that allows users to create and schedule a new sparring room.
 struct CreateSparringFormView: View {
+
+    // MARK: - Properties
+
     @ObservedObject var viewModel: SparringViewModel
     @Environment(\.dismiss) var dismiss
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.bgCream.ignoresSafeArea()
+
                 Form {
                     Section(
-                        header: Text("Detail Mosi & Jadwal").font(
+                        header: Text("Motion & Schedule Details").font(
                             .caption.bold()
                         )
                     ) {
                         Picker(
-                            "Kategori Topik *",
+                            "Topic Category *",
                             selection: $viewModel.formMotionCategory
                         ) {
-                            Text("Hukum & Konstitusi").tag("Hukum & Konstitusi")
-                            Text("Pendidikan").tag("Pendidikan")
-                            Text("Ekonomi & Bisnis").tag("Ekonomi & Bisnis")
-                            Text("Politik & Sosial").tag("Politik & Sosial")
+                            Text("Law & Constitution").tag("Law & Constitution")
+                            Text("Education").tag("Education")
+                            Text("Economy & Business").tag("Economy & Business")
+                            Text("Politics & Social").tag("Politics & Social")
                         }
 
-                        // REVISI 5: Menggunakan style kalender compact yang lebih estetik dan tidak aneh
                         DatePicker(
-                            "Waktu Pelaksanaan *",
+                            "Scheduled Time *",
                             selection: $viewModel.formScheduledTime,
                             displayedComponents: [.date, .hourAndMinute]
                         )
@@ -43,33 +49,35 @@ struct CreateSparringFormView: View {
                     .listRowBackground(Color.white)
 
                     Section(
-                        header: Text("Informasi Pertemuan").font(
+                        header: Text("Meeting Information").font(
                             .caption.bold()
                         )
                     ) {
-                        // REVISI 11: Memberi tanda bintang (*)
                         TextField(
-                            "Tautan Zoom/Google Meet *",
+                            "Zoom/Google Meet Link *",
                             text: $viewModel.formMeetingLink
                         )
-                        .keyboardType(.URL).textInputAutocapitalization(.never)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+
                         TextField(
-                            "Catatan Tambahan (Khusus)",
+                            "Additional Notes (Optional)",
                             text: $viewModel.formSpecialNotes
                         )
+
                         Toggle(
-                            "Buat Ruangan Privat",
+                            "Make Room Private",
                             isOn: $viewModel.formIsPrivate
-                        ).tint(Color.btnPositive)
+                        )
+                        .tint(Color.btnPositive)
                     }
                     .listRowBackground(Color.white)
 
-                    // REVISI 4: Button menjadi abu-abu dan tidak bisa diklik sampai Link diisi
                     Button(action: {
                         viewModel.submitRoomForm()
                         dismiss()
                     }) {
-                        Text("Buat Ruang Sparring")
+                        Text("Create Sparring Room")
                             .font(.headline)
                             .foregroundStyle(
                                 viewModel.formMeetingLink.isEmpty
@@ -85,18 +93,21 @@ struct CreateSparringFormView: View {
                 }
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Buat Ruang Baru")
+            .navigationTitle("Create New Room")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Batal") { dismiss() }.foregroundStyle(
-                        Color.btnNegative
-                    )
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundStyle(Color.btnNegative)
                 }
             }
         }
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     CreateSparringFormView(

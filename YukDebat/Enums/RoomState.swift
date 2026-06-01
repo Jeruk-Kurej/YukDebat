@@ -2,12 +2,14 @@
 //  RoomState.swift
 //  YukDebat
 //
-//  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
+//  Created by Keane Juan Suryanto on 01/06/26.
 //
 
 import Foundation
 
+/// Represents the current life-cycle state of a sparring room.
 enum RoomState: String, Codable {
+    case waiting = "WAITING"  // PERBAIKAN BUG: Menambahkan status menunggu jadwal
     case preparing = "PREPARING"
     case ongoing = "ONGOING"
     case done = "DONE"
