@@ -62,3 +62,4 @@ fastlane/screenshots/**/*.png
 fastlane/test_output
 YukDebat/GoogleService-Info.plist
 YukDebat/GoogleService-Info.plist
+.DS_Store

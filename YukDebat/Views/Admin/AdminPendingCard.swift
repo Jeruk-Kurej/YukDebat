@@ -54,12 +54,7 @@ struct AdminPendingCard: View {
                 ),
                     let uiImage = UIImage(data: imageData)
                 {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 180)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
+                    RemoteImageView(source: req.certificateUrl)
                 }
             }
 
