@@ -7,58 +7,100 @@
 
 import SwiftUI
 
+/// A form for creating or editing case building notes.
 struct NoteEditorView: View {
+
+    // MARK: - Properties
+
     @ObservedObject var viewModel: MotionArchiveViewModel
     @State var draftNote: CaseBuildingNoteModel
 
-    // REVISI 10: Parameter untuk mengetahui apakah ini Edit atau Baru
     var isNewNote: Bool = false
-
     @Environment(\.dismiss) var dismiss
 
+    // MARK: - Body
+
     var body: some View {
-        Form {
-            Section(header: Text("Detail Mosi Lomba")) {
-                // REVISI 11: Label bintang untuk field wajib
-                TextField("Judul Mosi *", text: $draftNote.motionTitle, axis: .vertical)
+        ZStack {
+            Color.bgCream.ignoresSafeArea()
+
+            Form {
+                Section(header: Text("Motion Details").font(.caption.bold())) {
+                    TextField(
+                        "Motion Title *",
+                        text: $draftNote.motionTitle,
+                        axis: .vertical
+                    )
                     .font(.system(.body, design: .serif, weight: .medium))
 
-                Picker("Visibilitas Catatan", selection: $draftNote.visibility) {
-                    Text("Private").tag(VisibilityType.privateAccess)
-                    Text("Public").tag(VisibilityType.publicAccess)
+                    Picker("Note Visibility", selection: $draftNote.visibility)
+                    {
+                        Text("Private").tag(VisibilityType.privateAccess)
+                        Text("Public").tag(VisibilityType.publicAccess)
+                    }
+                    .tint(Color.accentWalnut)
                 }
-                .tint(Color.accentWalnut)
-            }
-            .listRowBackground(Color.white)
+                .listRowBackground(Color.white)
 
-            Section(header: Text("Struktur Konstruksi Kasus (Case Building)")) {
-                TextEditor(text: $draftNote.argumentsRichText)
-                    .frame(minHeight: 280)
-                    .font(.system(.body, design: .default))
+                Section(
+                    header: Text("Case Building Structure").font(
+                        .caption.bold()
+                    )
+                ) {
+                    TextEditor(text: $draftNote.argumentsRichText)
+                        .frame(minHeight: 280)
+                        .font(.system(.body, design: .default))
+                }
+                .listRowBackground(Color.white)
             }
-            .listRowBackground(Color.white)
+            .scrollContentBackground(.hidden)
         }
-        .scrollContentBackground(.hidden)
-        .background(Color.bgCream)
-
-        // REVISI 10: Dinamika Title
-        .navigationTitle(isNewNote ? "Tambah Catatan" : "Edit Catatan")
+        .navigationTitle(isNewNote ? "Add Note" : "Edit Note")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Batal") { dismiss() }.foregroundStyle(Color.btnNegative)
+                Button("Cancel") {
+                    dismiss()
+                }
+                .foregroundStyle(Color.btnNegative)
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Simpan") {
+                Button("Save") {
                     draftNote.updatedAt = Date()
                     viewModel.saveNote(draftNote)
                     dismiss()
                 }
                 .fontWeight(.bold)
-                .foregroundStyle(draftNote.motionTitle.isEmpty ? Color.gray : Color.btnPositive)
+                .foregroundStyle(
+                    draftNote.motionTitle.isEmpty
+                        ? Color.gray : Color.btnPositive
+                )
                 .disabled(draftNote.motionTitle.isEmpty)
             }
         }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    NavigationStack {
+        NoteEditorView(
+            viewModel: MotionArchiveViewModel(
+                apiProxy: MockCloudFunctions(),
+                localCache: LocalCoreDataStorage()
+            ),
+            draftNote: CaseBuildingNoteModel(
+                id: "1",
+                ownerId: "user_1",
+                motionTitle: "",
+                argumentsRichText: "",
+                visibility: .publicAccess,
+                isFeedbackRequested: false,
+                updatedAt: Date()
+            ),
+            isNewNote: true
+        )
     }
 }
 
