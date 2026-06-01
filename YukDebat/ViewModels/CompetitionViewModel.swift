@@ -76,8 +76,18 @@ class CompetitionViewModel: ObservableObject {
                     "status": ReviewStatus.pending.rawValue
                 ]
                 
-                try await db.collection("competitions").document(compId).setData(data)
-                
+                db.collection("competitions").document(compId).setData(data) { [weak self] error in
+                        DispatchQueue.main.async {
+                            self?.isLoading = false
+                            if let error = error {
+                                self?.statusMessage = "Failed to submit: \(error.localizedDescription)"
+                                // HAPUS reset form di sini! Biarkan user memperbaiki input.
+                            } else {
+                                self?.statusMessage = "Competition submitted!"
+                                self?.name = ""; self?.desc = ""; self?.selectedImageData = nil // Reset hanya kalau sukses
+                            }
+                        }
+                    }
                 DispatchQueue.main.async {
                     self.isLoading = false
                     self.statusMessage = "Competition submitted for Admin review!"
@@ -90,5 +100,6 @@ class CompetitionViewModel: ObservableObject {
                 }
             }
         }
+        
     }
 }

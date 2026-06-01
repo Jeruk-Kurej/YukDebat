@@ -177,4 +177,13 @@ class SparringViewModel: ObservableObject {
         // Logika ini dipasang di submitRoomForm:
         // guard formScheduledTime > Date() else { /* Tampilkan error */ }
     }
+    func checkAndCancelExpiredRooms() {
+        let now = Date()
+        // Loop melalui lobbyRooms dan batalkan yang waktunya sudah lewat
+        for i in 0..<lobbyRooms.count {
+            if lobbyRooms[i].scheduledTime < now && lobbyRooms[i].state == .preparing {
+                lobbyRooms[i].state = .cancelled
+            }
+        }
+    }
 }

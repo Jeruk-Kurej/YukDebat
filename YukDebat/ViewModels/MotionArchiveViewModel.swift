@@ -113,10 +113,11 @@ class MotionArchiveViewModel: ObservableObject {
             noteToSave.ownerId = Auth.auth().currentUser?.uid ?? "unknown"
         }
         var data: [String: Any] = [
-            "id": noteToSave.id, "ownerId": noteToSave.ownerId,
+            "id": noteToSave.id,
+            "ownerId": noteToSave.ownerId,
             "motionTitle": noteToSave.motionTitle,
             "argumentsRichText": noteToSave.argumentsRichText,
-            "visibility": noteToSave.visibility.rawValue,
+            "visibility": noteToSave.visibility.rawValue,  // Pastikan ini menghasilkan "PUBLIC" atau "PRIVATE"
             "isFeedbackRequested": noteToSave.isFeedbackRequested,
             "updatedAt": Timestamp(date: noteToSave.updatedAt),
         ]

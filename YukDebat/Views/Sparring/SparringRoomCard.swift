@@ -34,8 +34,7 @@ struct SparringRoomCard: View {
         .alert("Leave Room", isPresented: $showLeaveAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Leave", role: .destructive) {
-                // REVISI: Fungsi Leave sudah aktif
-                viewModel.leaveRoom(roomId: room.id)
+                viewModel.leaveRoom(roomId: room.id) // Pastikan fungsi ini dipanggil
             }
         } message: { Text("Are you sure you want to leave this sparring session?") }
     }
