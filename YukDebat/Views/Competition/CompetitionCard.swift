@@ -34,12 +34,9 @@ struct CompetitionCard: View {
             ),
                 let uiImage = UIImage(data: imageData)
             {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 180)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
+                RemoteImageView(source: comp.posterStorageUrl)
+                    .frame(height: 160)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             } else {
                 Rectangle()
                     .fill(Color.gray.opacity(0.2))
