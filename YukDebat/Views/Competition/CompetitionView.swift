@@ -2,53 +2,93 @@
 //  CompetitionView.swift
 //  YukDebat
 //
-//  Created by Keane Juan Suryanto on 29/05/26.
+//  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
 //
 
 import SwiftUI
 
+/// The main feed for browsing active competitions and viewing pending submissions.
 struct CompetitionView: View {
-    @StateObject private var viewModel = CompetitionViewModel(
-        dbService: MockFirestoreService(),
-        storageService: MockCloudStorage()
-    )
-    @State private var isShowingUploadForm = false
+
+    // MARK: - Properties
+
+    @StateObject private var viewModel = CompetitionViewModel()
+    @State private var showUploadForm = false
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottomTrailing) {
                 Color.bgCream.ignoresSafeArea()
 
-                ScrollView {
-                    LazyVStack(spacing: 20) {
-                        ForEach(viewModel.competitions) { comp in
-                            CompetitionCard(comp: comp)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        if !viewModel.myPendingCompetitions.isEmpty {
+                            VStack(alignment: .leading) {
+                                Text("Pending Admin Approval")
+                                    .font(.headline)
+                                    .foregroundStyle(Color.textCharcoal)
+                                    .padding(.horizontal, 24)
+
+                                ForEach(viewModel.myPendingCompetitions) {
+                                    comp in
+                                    CompetitionCard(comp: comp, isPending: true)
+                                }
+                            }
+                        }
+
+                        VStack(alignment: .leading) {
+                            Text(
+                                viewModel.activeCompetitions.isEmpty
+                                    ? "No active competitions."
+                                    : "Latest Competitions"
+                            )
+                            .font(.headline)
+                            .foregroundStyle(Color.textCharcoal)
+                            .padding(.horizontal, 24)
+
+                            ForEach(viewModel.activeCompetitions) { comp in
+                                CompetitionCard(comp: comp, isPending: false)
+                            }
                         }
                     }
-                    .padding(24)
+                    .padding(.top, 8)
+                    .padding(.bottom, 100)
                 }
 
-                // FAB untuk akses Upload bagi Promotor
-                Button(action: { isShowingUploadForm = true }) {
+                Button(action: { showUploadForm = true }) {
                     Image(systemName: "plus")
                         .font(.title2.bold())
                         .foregroundStyle(.white)
                         .frame(width: 60, height: 60)
                         .background(Color.btnPositive)
                         .clipShape(Circle())
-                        .shadow(radius: 5)
+                        .shadow(
+                            color: Color.black.opacity(0.15),
+                            radius: 8,
+                            x: 0,
+                            y: 4
+                        )
                 }
-                .padding(24)
+                .padding(.trailing, 24)
+                .padding(.bottom, 110)
             }
-            .navigationTitle("Competition Board")
-            .sheet(isPresented: $isShowingUploadForm) {
-                UploadCompetitionForm(viewModel: viewModel)
-            }
+            .navigationTitle("Competitions")
             .onAppear { viewModel.fetchCompetitions() }
+            .sheet(isPresented: $showUploadForm) {
+                UploadFormCompetition(viewModel: viewModel)
+            }
+            .modernToast(
+                message: $viewModel.statusMsg,
+                isError: viewModel.statusMsg?.contains("Failed") == true
+                    || viewModel.statusMsg?.contains("Select") == true
+            )
         }
     }
 }
 
+// MARK: - Preview
 #Preview {
     CompetitionView()
 }
