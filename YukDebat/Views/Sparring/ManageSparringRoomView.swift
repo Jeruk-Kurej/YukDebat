@@ -163,7 +163,7 @@ struct ManageSparringRoomView: View {
             id: "1",
             hostId: "u1",
             scheduledTime: Date(),
-            motionCategory: "Test",
+            motionTitle: "Test",
             specialNotes: "",
             meetingLink: "",
             accessType: .privateAccess,
