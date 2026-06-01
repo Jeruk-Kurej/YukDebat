@@ -11,7 +11,7 @@ import SwiftUI
 /// Manages the navigation between Explore Motions, My Case Notes, and Community Notes.
 struct MotionArchiveView: View {
 
-    // MARK: - Properties
+    // MARK: Hanzelius - Properties
 
     @ObservedObject var viewModel: MotionArchiveViewModel
     @EnvironmentObject var authVM: AuthViewModel
@@ -19,7 +19,7 @@ struct MotionArchiveView: View {
     @State private var selectedTab = 0
     @State private var showingNewNoteSheet = false
 
-    // MARK: - Body
+    // MARK: Hanzelius - Body
 
     var body: some View {
         NavigationStack {

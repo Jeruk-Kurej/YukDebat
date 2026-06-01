@@ -11,14 +11,14 @@ import SwiftUI
 /// Supports navigation to details and a context menu for editing or deleting notes.
 struct MyNotesListView: View {
 
-    // MARK: - Properties
+    // MARK: Hanzelius - Properties
 
     @ObservedObject var viewModel: MotionArchiveViewModel
     @EnvironmentObject var authVM: AuthViewModel
 
     @State private var noteToEdit: CaseBuildingNoteModel?
 
-    // MARK: - Body
+    // MARK: Hanzelius - Body
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -84,7 +84,7 @@ struct MyNotesListView: View {
     }
 }
 
-// MARK: - Preview
+// MARK: Hanzelius - Preview
 
 #Preview {
     MyNotesListView(
