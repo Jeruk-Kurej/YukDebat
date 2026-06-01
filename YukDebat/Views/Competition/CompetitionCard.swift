@@ -90,7 +90,8 @@ struct CompetitionCard: View {
     CompetitionCard(
         comp: CompetitionModel(
             id: "1",
-            promoterId: "1",
+            promoterId: "user_1",
+            promoterEmail: "test@example.com",
             name: "NUDC 2026",
             description: "National University Debating Championship",
             eventDate: Date(),
