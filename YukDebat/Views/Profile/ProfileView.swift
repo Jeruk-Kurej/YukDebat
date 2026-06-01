@@ -5,7 +5,6 @@
 //  Created by Keane Juan Suryanto on 01/06/26.
 //
 
-
 import SwiftUI
 
 struct ProfileView: View {
@@ -30,7 +29,7 @@ struct ProfileView: View {
                     }
                 }
                 
-                // REVISI: Hapus Section Sparring Feedback
+                // SECTION SPARRING FEEDBACK SUDAH DIHAPUS (Dihilangkan dari list)
                 
                 Section("Account") {
                     Button("Log Out", role: .destructive) {
