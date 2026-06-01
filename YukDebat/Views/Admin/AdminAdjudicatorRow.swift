@@ -28,8 +28,9 @@ struct AdminAdjudicatorRow: View {
             if let imageData = Data(
                 base64Encoded: req.certificateUrl,
                 options: .ignoreUnknownCharacters
-            ),
-               RemoteImageView(source: req.certificateUrl)
+            ){
+                RemoteImageView(source: req.certificateUrl)
+            }
 
             Text(req.experience).font(.subheadline).foregroundStyle(.secondary)
                 .padding(.horizontal, 16)

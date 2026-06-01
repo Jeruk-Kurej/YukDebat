@@ -19,6 +19,7 @@ struct AdminPendingCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Header: User Info
             HStack(spacing: 10) {
                 Image(systemName: "person.crop.circle.fill")
                     .font(.title)
@@ -37,27 +38,16 @@ struct AdminPendingCard: View {
             .padding(.horizontal, 16)
             .padding(.top, 16)
 
+            // IMAGE SECTION: Gunakan RemoteImageView 1 baris saja!
+            // Komponen ini otomatis menangani HTTP (Cloudinary) atau Base64 (Lama).
             if !comp.posterStorageUrl.isEmpty {
-                if comp.posterStorageUrl.starts(with: "http") {
-                    AsyncImage(url: URL(string: comp.posterStorageUrl)) {
-                        image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        ProgressView()
-                    }
+                RemoteImageView(source: comp.posterStorageUrl)
                     .frame(height: 180)
                     .frame(maxWidth: .infinity)
                     .clipped()
-                } else if let imageData = Data(
-                    base64Encoded: comp.posterStorageUrl,
-                    options: .ignoreUnknownCharacters
-                ),
-                    let uiImage = UIImage(data: imageData)
-                {
-                    RemoteImageView(source: req.certificateUrl)
-                }
             }
 
+            // Description
             VStack(alignment: .leading, spacing: 6) {
                 Text(comp.name)
                     .font(.title3.bold())
@@ -69,6 +59,7 @@ struct AdminPendingCard: View {
             }
             .padding(.horizontal, 16)
 
+            // Actions
             HStack(spacing: 12) {
                 Button(action: { onAction(.reject) }) {
                     Text("Reject")
