@@ -10,11 +10,11 @@ import SwiftUI
 /// A subcomponent representing a single case building note visually.
 struct NoteCard: View {
 
-    // MARK: - Properties
+    // MARK: Hanzelius - Properties
 
     let note: CaseBuildingNoteModel
 
-    // MARK: - Body
+    // MARK: Hanzelius - Body
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -68,7 +68,7 @@ struct NoteCard: View {
     }
 }
 
-// MARK: - Preview
+// MARK: Hanzelius - Preview
 
 #Preview {
     NoteCard(

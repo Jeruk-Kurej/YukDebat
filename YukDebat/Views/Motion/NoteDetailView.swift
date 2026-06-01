@@ -11,20 +11,20 @@ import SwiftUI
 /// Allows the user to request feedback from adjudicators or read provided feedback.
 struct NoteDetailView: View {
 
-    // MARK: - Properties
+    // MARK: Hanzelius - Properties
 
     @ObservedObject var viewModel: MotionArchiveViewModel
     let note: CaseBuildingNoteModel
 
     @State private var showingEditSheet = false
 
-    // MARK: - Computed Properties
+    // MARK: Hanzelius - Computed Properties
 
     var latestNote: CaseBuildingNoteModel {
         viewModel.myNotes.first { $0.id == note.id } ?? note
     }
 
-    // MARK: - Body
+    // MARK: Hanzelius - Body
 
     var body: some View {
         ZStack {
@@ -179,7 +179,7 @@ struct NoteDetailView: View {
     }
 }
 
-// MARK: - Preview
+// MARK: Hanzelius - Preview
 
 #Preview {
     NavigationStack {
