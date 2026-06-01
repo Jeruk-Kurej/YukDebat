@@ -5,11 +5,6 @@
 //  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
 //
 
-//
-//  CompetitionView.swift
-//  YukDebatCuyy
-//
-
 import SwiftUI
 
 /// The main feed for browsing active competitions and viewing pending submissions.
