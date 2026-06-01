@@ -1,12 +1,14 @@
 //
 //  Color.swift
-//  YukDebat
+//  YukDebatCuyy
 //
-//  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
+//  Created by Bryan Carlie Lukito Setiawan on 26/05/26.
 //
 
 import SwiftUI
 
+/// Extends standard Color to provide a Single Source of Truth for YukDebat's design system.
+/// This prevents hardcoding hex values across different View files.
 extension Color {
     static let bgCream = Color(red: 244 / 255, green: 241 / 255, blue: 234 / 255)
     static let textCharcoal = Color(red: 28 / 255, green: 28 / 255, blue: 30 / 255)

@@ -7,179 +7,196 @@
 
 import SwiftUI
 
+/// Provides a read-only view of a specific case building note.
+/// Allows the user to request feedback from adjudicators or read provided feedback.
 struct NoteDetailView: View {
+
+    // MARK: - Properties
+
     @ObservedObject var viewModel: MotionArchiveViewModel
-    let noteId: String
+    let note: CaseBuildingNoteModel
 
-    @State private var isShowingEditSheet = false
+    @State private var showingEditSheet = false
 
-    // Computed property: Mengambil data paling segar dari ViewModel
-    var currentNote: CaseBuildingNoteModel? {
-        viewModel.savedNotes.first { $0.id == noteId }
+    // MARK: - Computed Properties
+
+    var latestNote: CaseBuildingNoteModel {
+        viewModel.myNotes.first { $0.id == note.id } ?? note
     }
+
+    // MARK: - Body
 
     var body: some View {
         ZStack {
             Color.bgCream.ignoresSafeArea()
 
-            if let note = currentNote {
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 20) {
-
-                        // 1. HEADER KARTU
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                HStack(spacing: 4) {
-                                    Image(
-                                        systemName: note.visibility
-                                            == .privateAccess
-                                            ? "lock.fill" : "globe"
-                                    )
-                                    Text(
-                                        note.visibility == .privateAccess
-                                            ? "PRIVAT" : "PUBLIK"
-                                    )
-                                }
-                                .font(.system(size: 10, weight: .black))
-                                .foregroundStyle(
-                                    note.visibility == .privateAccess
-                                        ? Color.btnNegative : Color.btnPositive
-                                )
-                                .padding(.horizontal, 8).padding(.vertical, 5)
-                                .background(
-                                    note.visibility == .privateAccess
-                                        ? Color.btnNegative.opacity(0.1)
-                                        : Color.btnPositive.opacity(0.1)
-                                )
-                                .clipShape(Capsule())
-
-                                Spacer()
-                            }
-
-                            Text(note.motionTitle)
-                                .font(
-                                    .system(
-                                        .title2,
-                                        design: .serif,
-                                        weight: .bold
-                                    )
-                                )
-                                .foregroundStyle(Color.textCharcoal)
-
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Header Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(
+                                systemName: latestNote.visibility
+                                    == .publicAccess ? "globe" : "lock.fill"
+                            )
                             Text(
-                                "Terakhir diubah: \(note.updatedAt.formatted(date: .abbreviated, time: .shortened))"
+                                latestNote.visibility == .publicAccess
+                                    ? "Public Access" : "Private Access"
                             )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                         }
-                        .padding(20)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .font(.caption.bold())
+                        .foregroundStyle(
+                            latestNote.visibility == .publicAccess
+                                ? Color.btnPositive : Color.btnNegative
+                        )
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            latestNote.visibility == .publicAccess
+                                ? Color.btnPositive.opacity(0.1)
+                                : Color.btnNegative.opacity(0.1)
+                        )
+                        .clipShape(Capsule())
 
-                        // 2. KONTEN ARGUMEN
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Catatan Strategi")
-                                .font(.headline)
-                                .foregroundStyle(Color.accentWalnut)
+                        Text(latestNote.motionTitle)
+                            .font(.title2.bold())
+                            .foregroundStyle(Color.textCharcoal)
+                            .padding(.top, 4)
 
-                            if note.argumentsRichText.isEmpty {
-                                Text(
-                                    "Belum ada argumen yang ditulis. Klik 'Edit' di sudut kanan atas untuk mulai membangun kasus."
-                                )
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                        Text(
+                            "Last modified: \(latestNote.updatedAt.formatted(date: .abbreviated, time: .shortened))"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+
+                    Divider()
+
+                    // Content Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Case Building Note")
+                            .font(.headline)
+                            .foregroundStyle(Color.accentWalnut)
+
+                        if latestNote.argumentsRichText.isEmpty {
+                            Text("No arguments or notes written yet.")
+                                .font(.body)
+                                .foregroundStyle(.gray.opacity(0.8))
                                 .italic()
-                            } else {
-                                Text(note.argumentsRichText)
-                                    .font(.system(.body, design: .default))
-                                    .lineSpacing(4)
-                            }
+                                .padding(.top, 8)
+                        } else {
+                            Text(latestNote.argumentsRichText)
+                                .font(.body)
+                                .foregroundStyle(Color.textCharcoal)
+                                .lineSpacing(4)
                         }
-                        .padding(20)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
 
-                        // 3. KARTU AKSI FEEDBACK (UX BARU - HANYA MUNCUL JIKA PUBLIK)
-                        if note.visibility == .publicAccess {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Evaluasi & Penilaian Juri")
-                                    .font(.headline)
-                                    .foregroundStyle(Color.accentWalnut)
+                    Divider().padding(.vertical, 8)
 
+                    // Feedback Section
+                    if let feedback = latestNote.feedbackText, !feedback.isEmpty
+                    {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "star.bubble.fill")
                                 Text(
-                                    "Kirim argumenmu ke antrean Adjudicator untuk mendapatkan penilaian berstandar format British Parliamentary."
+                                    "Feedback from Adjudicator: \(latestNote.feedbackProviderName ?? "Adjudicator")"
                                 )
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-
-                                Button(action: {
-                                    // Berikan animasi agar UX terasa interaktif saat di-klik
-                                    withAnimation(.easeOut(duration: 0.3)) {
-                                        viewModel.requestFeedback(for: note.id)
-                                    }
-                                }) {
-                                    HStack {
-                                        Image(
-                                            systemName: note.isFeedbackRequested
-                                                ? "checkmark.seal.fill"
-                                                : "paperplane.fill"
-                                        )
-                                        Text(
-                                            note.isFeedbackRequested
-                                                ? "Permintaanmu Sedang Diproses"
-                                                : "Minta Feedback Adjudicator"
-                                        )
-                                        Spacer()
-                                    }
-                                    .font(.subheadline.bold())
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(
-                                        note.isFeedbackRequested
-                                            ? Color.btnPositive.opacity(0.15)
-                                            : Color.btnPositive
-                                    )
-                                    .foregroundStyle(
-                                        note.isFeedbackRequested
-                                            ? Color.btnPositive : .white
-                                    )
-                                    .clipShape(
-                                        RoundedRectangle(cornerRadius: 12)
-                                    )
-                                }
-                                .disabled(note.isFeedbackRequested)  // Kunci tombol jika sudah diminta
                             }
-                            .padding(20)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .transition(
-                                .opacity.combined(with: .move(edge: .bottom))
-                            )
-                        }
+                            .font(.headline)
+                            .foregroundStyle(.purple)
 
-                    }
-                    .padding(20)
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("Edit") {
-                            isShowingEditSheet = true
+                            Text(feedback)
+                                .font(.body)
+                                .foregroundStyle(Color.textCharcoal)
+                                .padding()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.purple.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12).stroke(
+                                        Color.purple.opacity(0.3),
+                                        lineWidth: 1
+                                    )
+                                )
                         }
-                        .fontWeight(.bold)
-                        .foregroundStyle(Color.btnPositive)
+                    } else if latestNote.visibility == .publicAccess {
+                        Button(action: {
+                            withAnimation {
+                                viewModel.requestFeedback(for: latestNote.id)
+                            }
+                        }) {
+                            HStack {
+                                Image(
+                                    systemName: latestNote.isFeedbackRequested
+                                        ? "hourglass" : "paperplane.fill"
+                                )
+                                Text(
+                                    latestNote.isFeedbackRequested
+                                        ? "Waiting for Adjudicator Feedback..."
+                                        : "Request Adjudicator Feedback"
+                                )
+                            }
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                latestNote.isFeedbackRequested
+                                    ? Color.gray : Color.purple
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .disabled(latestNote.isFeedbackRequested)
                     }
+
+                    Spacer()
                 }
-                .sheet(isPresented: $isShowingEditSheet) {
-                    NavigationStack {
-                        NoteEditorView(viewModel: viewModel, draftNote: note)
-                    }
-                }
-            } else {
-                Text("Catatan tidak ditemukan.")
+                .padding(24)
             }
         }
+        .navigationTitle("Note Details")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { showingEditSheet = true }) {
+                    Text("Edit")
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.btnPositive)
+                }
+            }
+        }
+        .sheet(isPresented: $showingEditSheet) {
+            NavigationStack {
+                NoteEditorView(
+                    viewModel: viewModel,
+                    draftNote: latestNote,
+                    isNewNote: false
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    NavigationStack {
+        NoteDetailView(
+            viewModel: MotionArchiveViewModel(
+                apiProxy: MockCloudFunctions(),
+                localCache: LocalCoreDataStorage()
+            ),
+            note: CaseBuildingNoteModel(
+                id: "1",
+                ownerId: "user_1",
+                motionTitle: "This house would ban artificial intelligence",
+                argumentsRichText: "Content...",
+                visibility: .publicAccess,
+                isFeedbackRequested: false,
+                updatedAt: Date()
+            )
+        )
     }
 }
