@@ -85,4 +85,3 @@ struct NoteCard: View {
     .padding()
     .background(Color.bgCream)
 }
-

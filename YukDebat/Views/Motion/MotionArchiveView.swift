@@ -107,4 +107,3 @@ struct MotionArchiveView: View {
     )
     .environmentObject(AuthViewModel())
 }
-

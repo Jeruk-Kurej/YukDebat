@@ -11,18 +11,24 @@ struct AppButton: View {
     let title: String
     let color: Color
     let icon: String
-    
+
     var body: some View {
         HStack {
             Image(systemName: icon)
             Text(title)
         }
         .font(.headline).foregroundStyle(.white).frame(maxWidth: .infinity)
-        .padding().background(color).clipShape(RoundedRectangle(cornerRadius: 14))
+        .padding().background(color).clipShape(
+            RoundedRectangle(cornerRadius: 14)
+        )
     }
 }
 
 #Preview {
-    AppButton(title: "Join Sparring", color: Color.btnPositive, icon: "person.2.fill")
-        .padding()
+    AppButton(
+        title: "Join Sparring",
+        color: Color.btnPositive,
+        icon: "person.2.fill"
+    )
+    .padding()
 }

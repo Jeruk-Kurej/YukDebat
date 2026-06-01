@@ -5,6 +5,11 @@
 //  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
 //
 
+//
+//  UploadFormCompetition.swift
+//  YukDebatCuyy
+//
+
 import PhotosUI
 import SwiftUI
 import UIKit

@@ -14,7 +14,7 @@
 //    let btnPositive = Color(red: 58 / 255, green: 90 / 255, blue: 64 / 255)
 //    let btnNeutral = Color(red: 43 / 255, green: 58 / 255, blue: 74 / 255)
 //    let btnNegative = Color(red: 169 / 255, green: 74 / 255, blue: 74 / 255)
-//    
+//
 //    // Elemen Estetika Tambahan: Sahabat Alami Latar Krem
 //    let accentWalnut = Color(red: 92 / 255, green: 64 / 255, blue: 51 / 255)
 //
@@ -62,7 +62,7 @@
 //                        // SECTION 2: COLOR PALETTE
 //                        VStack(alignment: .leading, spacing: 16) {
 //                            DesignHeader(title: "2. Color Palette")
-//                            
+//
 //                            ScrollView(.horizontal, showsIndicators: false) {
 //                                HStack(spacing: 12) {
 //                                    ColorCircle(
@@ -116,22 +116,22 @@
 //                                )
 //                            }
 //                        }
-//                        
+//
 //                        // SECTION 4: SECONDARY ACCENT SHOWCASE
 //                        VStack(alignment: .leading, spacing: 16) {
 //                            DesignHeader(title: "4. Secondary Accent Usage")
-//                            
+//
 //                            // Demonstrasi Elemen Walnut Brown yang Sangat Mewah
 //                            HStack(spacing: 10) {
 //                                Image(systemName: "building.columns.fill")
 //                                    .foregroundStyle(accentWalnut)
-//                                
+//
 //                                Text("Kategori: Hukum & Konstitusi")
 //                                    .font(.caption.bold())
 //                                    .foregroundStyle(accentWalnut)
-//                                
+//
 //                                Spacer()
-//                                
+//
 //                                Image(systemName: "chevron.right")
 //                                    .font(.caption.bold())
 //                                    .foregroundStyle(accentWalnut.opacity(0.5))

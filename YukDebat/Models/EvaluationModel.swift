@@ -17,7 +17,7 @@ struct EvaluationModel: Codable, Identifiable {
     var speakerScores: [String: Int]
     var narrativeFeedback: String
     let createdAt: Date
-    
+
     // MARK: - Mario - Methods
     /// Calculates the rank of each team based on the accumulated speaker scores.
     func calculateTeamRankings() -> [String: Int] {
