@@ -7,9 +7,10 @@
 
 import Foundation
 
-/// Outlines media storage actions for uploading and removing large binary objects.
+/// Defines the contract for uploading media files to a remote cloud storage service.
+/// Fulfills the Dependency Inversion Principle allowing easy switching between Cloudinary, Firebase Storage, or Mocks.
 protocol CloudStorageProtocol {
-    // MARK: - Methods
-    func uploadPosterFile(fileData: Data) async throws -> String
-    func deletePosterFile(fileUrl: String) async throws
+    
+    /// Uploads raw image data and returns the secure URL of the hosted image.
+    func uploadImage(imageData: Data) async throws -> String
 }
