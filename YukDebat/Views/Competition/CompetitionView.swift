@@ -9,20 +9,22 @@ import SwiftUI
 
 /// Displays a centralized board for debate competitions.
 struct CompetitionView: View {
-    
+
     // MARK: - Properties
-    
+
     @StateObject private var viewModel = CompetitionViewModel()
     @State private var showUploadForm = false
 
     // MARK: - Body
-    
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottomTrailing) {
                 Color.bgCream.ignoresSafeArea()
 
-                if viewModel.activeCompetitions.isEmpty && viewModel.myPendingCompetitions.isEmpty {
+                if viewModel.activeCompetitions.isEmpty
+                    && viewModel.myPendingCompetitions.isEmpty
+                {
                     VStack(spacing: 16) {
                         Image(systemName: "trophy")
                             .font(.system(size: 60))
@@ -42,9 +44,13 @@ struct CompetitionView: View {
                                         .font(.headline)
                                         .foregroundStyle(Color.textCharcoal)
                                         .padding(.horizontal, 24)
-                                    
-                                    ForEach(viewModel.myPendingCompetitions) { comp in
-                                        CompetitionCard(comp: comp, isPending: true)
+
+                                    ForEach(viewModel.myPendingCompetitions) {
+                                        comp in
+                                        CompetitionCard(
+                                            comp: comp,
+                                            isPending: true
+                                        )
                                     }
                                 }
                             }
@@ -55,9 +61,19 @@ struct CompetitionView: View {
                                         .font(.headline)
                                         .foregroundStyle(Color.textCharcoal)
                                         .padding(.horizontal, 24)
-                                    
-                                    ForEach(viewModel.activeCompetitions) { comp in
-                                        CompetitionCard(comp: comp, isPending: false)
+
+                                    ForEach(viewModel.activeCompetitions) {
+                                        comp in
+                                        NavigationLink(
+                                            destination: CompetitionDetailView(
+                                                comp: comp
+                                            )
+                                        ) {
+                                            CompetitionCard(
+                                                comp: comp,
+                                                isPending: false
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -74,7 +90,12 @@ struct CompetitionView: View {
                         .frame(width: 60, height: 60)
                         .background(Color.btnPositive)
                         .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                        .shadow(
+                            color: Color.black.opacity(0.15),
+                            radius: 8,
+                            x: 0,
+                            y: 4
+                        )
                 }
                 .padding(.trailing, 24)
                 .padding(.bottom, 110)
@@ -85,7 +106,10 @@ struct CompetitionView: View {
                 UploadFormCompetition(viewModel: viewModel)
             }
             // MENGGUNAKAN computed property hasError AGAR COMPILER TIDAK BINGUNG
-            .modernToast(message: $viewModel.statusMessage, isError: viewModel.hasError)
+            .modernToast(
+                message: $viewModel.statusMessage,
+                isError: viewModel.hasError
+            )
         }
     }
 }

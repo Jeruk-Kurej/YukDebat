@@ -18,7 +18,7 @@ class SparringViewModel: ObservableObject {
     @Published var isShowingCreateRoom: Bool = false
 
     // MARK: - Published Properties (Form Data)
-    @Published var formMotionTitle: String = "" // PENGGANTI KATEGORI
+    @Published var formMotionTitle: String = ""  // PENGGANTI KATEGORI
     @Published var formScheduledTime: Date = Date().addingTimeInterval(3600)
     @Published var formMeetingLink: String = ""
     @Published var formSpecialNotes: String = ""
@@ -36,10 +36,17 @@ class SparringViewModel: ObservableObject {
     // MARK: - Methods
     func listenToRoom(roomId: String) {
         let roomPublic = SparringRoomModel(
-            id: "room_public_1", hostId: "user_mario_123", scheduledTime: Date().addingTimeInterval(7200),
-            motionTitle: "Dewan ini akan melarang penggunaan AI sebagai instrumen kelulusan",
-            specialNotes: "Latihan BP standar NUDC.", meetingLink: "https://zoom.us/j/dummy",
-            accessType: .publicAccess, state: .preparing, participants: [], isAdjudicatorNeeded: true
+            id: "room_public_1",
+            hostId: "user_mario_123",
+            scheduledTime: Date().addingTimeInterval(7200),
+            motionTitle:
+                "Dewan ini akan melarang penggunaan AI sebagai instrumen kelulusan",
+            specialNotes: "Latihan BP standar NUDC.",
+            meetingLink: "https://zoom.us/j/dummy",
+            accessType: .publicAccess,
+            state: .preparing,
+            participants: [],
+            isAdjudicatorNeeded: true
         )
         self.lobbyRooms = [roomPublic]
     }
@@ -53,7 +60,9 @@ class SparringViewModel: ObservableObject {
     }
 
     func isUserPending(room: SparringRoomModel) -> Bool {
-        return pendingRequests[room.id]?.contains(where: { $0.userId == currentUserId }) ?? false
+        return pendingRequests[room.id]?.contains(where: {
+            $0.userId == currentUserId
+        }) ?? false
     }
 
     func submitRoomForm() {
@@ -62,11 +71,17 @@ class SparringViewModel: ObservableObject {
             return
         }
         let newRoom = SparringRoomModel(
-            id: UUID().uuidString, hostId: self.currentUserId, scheduledTime: self.formScheduledTime,
-            motionTitle: self.formMotionTitle.isEmpty ? "Topik Bebas" : self.formMotionTitle,
-            specialNotes: self.formSpecialNotes, meetingLink: self.formMeetingLink,
+            id: UUID().uuidString,
+            hostId: self.currentUserId,
+            scheduledTime: self.formScheduledTime,
+            motionTitle: self.formMotionTitle.isEmpty
+                ? "Topik Bebas" : self.formMotionTitle,
+            specialNotes: self.formSpecialNotes,
+            meetingLink: self.formMeetingLink,
             accessType: self.formIsPrivate ? .privateAccess : .publicAccess,
-            state: .preparing, participants: [], isAdjudicatorNeeded: true
+            state: .preparing,
+            participants: [],
+            isAdjudicatorNeeded: true
         )
         self.lobbyRooms.insert(newRoom, at: 0)
         self.isShowingCreateRoom = false
@@ -75,7 +90,8 @@ class SparringViewModel: ObservableObject {
     }
 
     func requestJoin(roomId: String, role: RoleSlotType, isTeam: Bool) {
-        guard let index = lobbyRooms.firstIndex(where: { $0.id == roomId }) else { return }
+        guard let index = lobbyRooms.firstIndex(where: { $0.id == roomId })
+        else { return }
         let room = lobbyRooms[index]
 
         if room.participants.count >= 8 {
@@ -84,8 +100,16 @@ class SparringViewModel: ObservableObject {
         }
 
         let regMode: RegMode = isTeam ? .team : .solo
-        let newParticipant = ParticipantModel(userId: currentUserId, roleSlot: role, regMode: regMode)
-        let teammate = ParticipantModel(userId: "rekan_tim_anda", roleSlot: role, regMode: regMode)
+        let newParticipant = ParticipantModel(
+            userId: currentUserId,
+            roleSlot: role,
+            regMode: regMode
+        )
+        let teammate = ParticipantModel(
+            userId: "rekan_tim_anda",
+            roleSlot: role,
+            regMode: regMode
+        )
 
         if room.accessType == .privateAccess {
             var currentPending = pendingRequests[roomId] ?? []
@@ -96,28 +120,37 @@ class SparringViewModel: ObservableObject {
         } else {
             self.lobbyRooms[index].participants.append(newParticipant)
             if isTeam { self.lobbyRooms[index].participants.append(teammate) }
-            self.alertMessage = isTeam ? "Berhasil bergabung (2 Slot)!" : "Berhasil bergabung!"
+            self.alertMessage =
+                isTeam ? "Berhasil bergabung (2 Slot)!" : "Berhasil bergabung!"
         }
     }
 
     func acceptRequest(roomId: String, participantId: String) {
-        guard let roomIndex = lobbyRooms.firstIndex(where: { $0.id == roomId }) else { return }
+        guard let roomIndex = lobbyRooms.firstIndex(where: { $0.id == roomId })
+        else { return }
         guard let pendingList = pendingRequests[roomId] else { return }
 
-        let matchedRequests = pendingList.filter { $0.userId == participantId || $0.userId == "rekan_tim_anda" }
+        let matchedRequests = pendingList.filter {
+            $0.userId == participantId || $0.userId == "rekan_tim_anda"
+        }
         for participant in matchedRequests {
             lobbyRooms[roomIndex].participants.append(participant)
         }
-        pendingRequests[roomId]?.removeAll(where: { $0.userId == participantId || $0.userId == "rekan_tim_anda" })
+        pendingRequests[roomId]?.removeAll(where: {
+            $0.userId == participantId || $0.userId == "rekan_tim_anda"
+        })
     }
 
     func rejectRequest(roomId: String, participantId: String) {
-        pendingRequests[roomId]?.removeAll(where: { $0.userId == participantId || $0.userId == "rekan_tim_anda" })
+        pendingRequests[roomId]?.removeAll(where: {
+            $0.userId == participantId || $0.userId == "rekan_tim_anda"
+        })
     }
 
     /// AKTIFASI FITUR LEAVE ROOM (Perbaikan Revisi)
     func leaveRoom(roomId: String) {
-        guard let index = lobbyRooms.firstIndex(where: { $0.id == roomId }) else { return }
+        guard let index = lobbyRooms.firstIndex(where: { $0.id == roomId })
+        else { return }
         self.lobbyRooms[index].participants.removeAll(where: {
             $0.userId == self.currentUserId || $0.userId == "rekan_tim_anda"
         })
@@ -125,7 +158,23 @@ class SparringViewModel: ObservableObject {
     }
 
     func triggerStart(roomId: String) {
-        guard let index = lobbyRooms.firstIndex(where: { $0.id == roomId }) else { return }
+        guard let index = lobbyRooms.firstIndex(where: { $0.id == roomId })
+        else { return }
         self.lobbyRooms[index].state = .ongoing
+    }
+
+    func validateAndFilterSessions() {
+        let now = Date()
+        // 1. Cancel otomatis yang sudah lewat waktu (Auto-Cancel)
+        for i in 0..<lobbyRooms.count {
+            if lobbyRooms[i].scheduledTime < now
+                && lobbyRooms[i].state == .preparing
+            {
+                lobbyRooms[i].state = .cancelled
+            }
+        }
+        // 2. Filter agar room yang sudah lampau tidak bisa dibuat (Pencegahan)
+        // Logika ini dipasang di submitRoomForm:
+        // guard formScheduledTime > Date() else { /* Tampilkan error */ }
     }
 }

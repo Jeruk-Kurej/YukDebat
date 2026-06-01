@@ -11,13 +11,15 @@ import Foundation
 /// Includes the ReviewStatus to support the Admin moderation workflow before going public.
 struct CompetitionModel: Codable, Identifiable {
     // MARK: - Properties
-    let id: String
-    let promoterId: String
-    var promoterEmail: String?
-    var name: String
-    var description: String
-    var eventDate: Date
-    var registrationUrl: String
-    var posterStorageUrl: String
-    var status: ReviewStatus
+    struct CompetitionModel: Codable, Identifiable {
+        let id: String
+        let promoterId: String
+        let promoterEmail: String
+        let name: String
+        let description: String
+        let eventDate: Date  // Tambahan
+        let registrationUrl: String  // Tambahan
+        let posterStorageUrl: String
+        let status: ReviewStatus
+    }
 }
