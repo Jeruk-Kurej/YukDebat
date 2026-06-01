@@ -11,14 +11,10 @@ import Foundation
 
 /// Provides comprehensive data aggregation for the Admin Moderation Dashboard.
 class ModerationDashboardViewModel: ObservableObject {
-
-    // MARK: - Published Properties
-
     @Published var pendingList: [CompetitionModel] = []
     @Published var approvedList: [CompetitionModel] = []
     @Published var pendingAdjudicators: [AdjudicatorRequestModel] = []
     @Published var approvedAdjudicators: [AdjudicatorRequestModel] = []
-
     @Published var allUsers: [UserModel] = []
     @Published var publicNotes: [CaseBuildingNoteModel] = []
     @Published var pendingMotions: [MotionRequestModel] = []
@@ -103,7 +99,6 @@ class ModerationDashboardViewModel: ObservableObject {
                 return MotionRequestModel(
                     id: doc.documentID,
                     title: data["title"] as? String ?? "",
-                    category: data["category"] as? String ?? "General",
                     submitterId: data["submitterId"] as? String ?? "",
                     status: .pending,
                     submittedAt: (data["submittedAt"] as? Timestamp)?
@@ -172,6 +167,21 @@ class ModerationDashboardViewModel: ObservableObject {
             "status": "REJECTED"
         ])
     }
+    func approveMotionRequest(req: MotionRequestModel) {
+        let batch = db.batch()
+        batch.updateData(
+            ["status": "ACTIVE"],
+            forDocument: db.collection("motion_requests").document(req.id)
+        )
+        let officialMotionData: [String: Any] = [
+            "id": req.id, "title": req.title,
+        ]
+        batch.setData(
+            officialMotionData,
+            forDocument: db.collection("motions").document(req.id)
+        )
+        batch.commit { _ in }
+    }
 
     func approveAdjudicator(reqId: String, userId: String) {
         let batch = db.batch()
@@ -182,25 +192,6 @@ class ModerationDashboardViewModel: ObservableObject {
         batch.updateData(
             ["role": "ADJUDICATOR"],
             forDocument: db.collection("users").document(userId)
-        )
-        batch.commit { _ in }
-    }
-
-    func approveMotionRequest(req: MotionRequestModel) {
-        let batch = db.batch()
-        batch.updateData(
-            ["status": "ACTIVE"],
-            forDocument: db.collection("motion_requests").document(req.id)
-        )
-
-        let officialMotionData: [String: Any] = [
-            "id": req.id,
-            "title": req.title,
-            "category": req.category,
-        ]
-        batch.setData(
-            officialMotionData,
-            forDocument: db.collection("motions").document(req.id)
         )
         batch.commit { _ in }
     }
