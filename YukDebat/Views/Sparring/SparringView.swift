@@ -70,6 +70,7 @@ struct SparringView: View {
             .navigationTitle("Sparring Lobby")
             .onAppear {
                 viewModel.listenToRoom(roomId: "default_room")
+                viewModel.validateAndFilterSessions()
             }
             .sheet(isPresented: $viewModel.isShowingCreateRoom) {
                 CreateSparringFormView(viewModel: viewModel)

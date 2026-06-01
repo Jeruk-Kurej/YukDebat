@@ -159,7 +159,17 @@ struct NoteDetailView: View {
         .navigationTitle("Note Details")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            if note.ownerId == Auth.auth().currentUser?.uid {
+                ToolbarItem(placement: .confirmationAction) {
+                    NavigationLink(
+                        "Edit",
+                        destination: NoteEditorView(
+                            viewModel: viewModel,
+                            draftNote: note
+                        )
+                    )
+                }
+
                 Button(action: { showingEditSheet = true }) {
                     Text("Edit")
                         .fontWeight(.bold)
