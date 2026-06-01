@@ -9,82 +9,58 @@ import Combine
 import FirebaseAuth
 import FirebaseFirestore
 import Foundation
-import SwiftUI
-import UIKit
 
-/// Manages the user flow for requesting an Adjudicator Role Upgrade.
 class AdjudicatorRequestViewModel: ObservableObject {
-
-    // MARK: - Mario - Published Properties (Form)
+    
     @Published var experience: String = ""
     @Published var selectedImageData: Data? = nil
-
-    // MARK: - Mario - Published Properties (State)
-    @Published var statusMsg: String? = nil
-    @Published var isLoading: Bool = false
-    @Published var isSuccess: Bool = false
+    
     @Published var hasPendingRequest: Bool = false
-
-    // MARK: - Mario - Private Properties
+    @Published var isLoading: Bool = false
+    @Published var statusMsg: String? = nil
+    
     private let db = Firestore.firestore()
-
-    // MARK: - Mario - Methods
-    /// Checks if the current user already has an ongoing upgrade request.
+    private let storageService: CloudStorageProtocol = CloudinaryService() // Injeksi Cloudinary
+    
     func checkExistingRequest() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
-        db.collection("adjudicator_requests")
-            .whereField("userId", isEqualTo: userId)
-            .whereField("status", isEqualTo: "PENDING")
-            .getDocuments { snapshot, _ in
-                DispatchQueue.main.async {
-                    self.hasPendingRequest =
-                        !(snapshot?.documents.isEmpty ?? true)
-                }
-            }
+        db.collection("adjudicator_requests").whereField("userId", isEqualTo: userId).whereField("status", isEqualTo: "PENDING").getDocuments { snapshot, _ in
+            if let docs = snapshot?.documents, !docs.isEmpty { DispatchQueue.main.async { self.hasPendingRequest = true } }
+        }
     }
-
-    /// Encodes the certificate image to Base64 and submits the application to Firestore.
+    
     func submitRequest(userName: String, userEmail: String) {
-        guard let userId = Auth.auth().currentUser?.uid,
-            let imageData = selectedImageData
-        else {
-            self.statusMsg = "Pilih foto sertifikat/bukti terlebih dahulu!"
-            return
-        }
-
+        guard let userId = Auth.auth().currentUser?.uid, let imageData = selectedImageData else { return }
+        
         isLoading = true
-        self.statusMsg = "Mengirim pengajuan..."
-
-        guard let uiImage = UIImage(data: imageData),
-            let compressedData = uiImage.jpegData(compressionQuality: 0.1)
-        else {
-            self.statusMsg = "Gagal memproses gambar."
-            self.isLoading = false
-            return
-        }
-
-        let base64String = compressedData.base64EncodedString()
-        let newDocRef = db.collection("adjudicator_requests").document()
-
-        let data: [String: Any] = [
-            "id": newDocRef.documentID, "userId": userId,
-            "userEmail": userEmail,
-            "fullName": userName, "experience": self.experience,
-            "certificateUrl": base64String, "status": "PENDING",
-            "submittedAt": Timestamp(date: Date()),
-        ]
-
-        newDocRef.setData(data) { error in
-            DispatchQueue.main.async {
-                self.isLoading = false
-                if let error = error {
-                    self.statusMsg =
-                        "Gagal mengirim: \(error.localizedDescription)"
-                } else {
-                    self.statusMsg =
-                        "Berhasil diajukan! Menunggu validasi Admin."
-                    self.isSuccess = true
+        
+        Task {
+            do {
+                // 1. Upload ke Cloudinary
+                let uploadedUrl = try await storageService.uploadImage(imageData: imageData)
+                
+                // 2. Simpan URL ke Firestore
+                let reqId = UUID().uuidString
+                let data: [String: Any] = [
+                    "id": reqId, "userId": userId, "userEmail": userEmail,
+                    "fullName": userName, "experience": experience,
+                    "certificateUrl": uploadedUrl,
+                    "status": ReviewStatus.pending.rawValue,
+                    "submittedAt": Timestamp(date: Date())
+                ]
+                
+                try await db.collection("adjudicator_requests").document(reqId).setData(data)
+                
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.statusMsg = "Request successfully submitted!"
                     self.hasPendingRequest = true
+                    self.experience = ""; self.selectedImageData = nil
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.statusMsg = "Failed to submit: \(error.localizedDescription)"
                 }
             }
         }
