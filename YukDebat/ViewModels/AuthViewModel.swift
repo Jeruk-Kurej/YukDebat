@@ -117,4 +117,18 @@ class AuthViewModel: ObservableObject {
             }
         }
     }
+    func updateName(newName: String, completion: @escaping (Error?) -> Void) {
+            guard let uid = Auth.auth().currentUser?.uid else {
+                // Berikan error buatan jika UID tidak ditemukan
+                let err = NSError(domain: "AuthError", code: 401, userInfo: [NSLocalizedDescriptionKey: "User not authenticated."])
+                completion(err)
+                return
+            }
+            
+            db.collection("users").document(uid).updateData(["name": newName]) { error in
+                DispatchQueue.main.async {
+                    completion(error)
+                }
+            }
+        }
 }
