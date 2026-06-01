@@ -7,39 +7,66 @@
 
 import SwiftUI
 
+/// The root view that determines whether to show the Authentication flow or the Main Tab Bar.
 struct MainView: View {
-    // Inisialisasi ViewModel secara Global untuk menahan state
-    @StateObject private var motionViewModel = MotionArchiveViewModel(
+
+    // MARK: - Properties
+
+    @EnvironmentObject var authVM: AuthViewModel
+
+    // Using @StateObject ensures the ViewModels survive tab switching without resetting.
+    @StateObject private var motionVM = MotionArchiveViewModel(
         apiProxy: MockCloudFunctions(),
         localCache: LocalCoreDataStorage()
     )
+    @StateObject private var sparringVM = SparringViewModel(
+        dbService: MockFirestoreService()
+    )
+
+    // MARK: - Body
 
     var body: some View {
-        TabView {
-            HomeView()
-                .tabItem { Label("Home", systemImage: "house.fill") }
+        if authVM.userSession != nil {
+            TabView {
+                CompetitionView()
+                    .tabItem {
+                        Label("Competitions", systemImage: "trophy.fill")
+                    }
 
-            SparringView(viewModel: SparringViewModel(dbService: MockFirestoreService()))
-                .tabItem { Label("Sparring", systemImage: "person.2.fill") }
+                SparringView(viewModel: sparringVM)
+                    .tabItem {
+                        Label("Sparring", systemImage: "person.2.fill")
+                    }
 
-            // Motion Archive dipassing ViewModel yang sama agar data sinkron
-            MotionArchiveView(viewModel: motionViewModel)
-                .tabItem {
-                    Label("Motions", systemImage: "books.vertical.fill")
+                MotionArchiveView(viewModel: motionVM)
+                    .tabItem {
+                        Label("Motions", systemImage: "books.vertical.fill")
+                    }
+
+                if authVM.currentUser?.role == .admin {
+                    ModerationDashboardView(
+                        viewModel: ModerationDashboardViewModel()
+                    )
+                    .tabItem {
+                        Label("Admin", systemImage: "shield.checkerboard")
+                    }
+                } else {
+                    ProfileView()
+                        .tabItem {
+                            Label("Profile", systemImage: "person.fill")
+                        }
                 }
-
-            // Tab Dashboard Juri (UC04)
-            AdjudicatorDashboardView(motionViewModel: motionViewModel)
-                .tabItem { Label("Juri", systemImage: "briefcase.fill") }
-
-            // Tab Profil
-            ProfileView()
-                .tabItem { Label("Profile", systemImage: "person.fill") }
+            }
+            .tint(Color.btnPositive)
+        } else {
+            AuthView()
         }
-        .tint(Color.btnPositive)  // Warna icon tab saat aktif
     }
 }
 
+// MARK: - Preview
+
 #Preview {
     MainView()
+        .environmentObject(AuthViewModel())
 }
