@@ -10,7 +10,7 @@ import SwiftUI
 /// A form for creating or editing case building notes.
 struct NoteEditorView: View {
 
-    // MARK: - Properties
+    // MARK: Hanzelius - Properties
 
     @ObservedObject var viewModel: MotionArchiveViewModel
     @State var draftNote: CaseBuildingNoteModel
@@ -18,7 +18,7 @@ struct NoteEditorView: View {
     var isNewNote: Bool = false
     @Environment(\.dismiss) var dismiss
 
-    // MARK: - Body
+    // MARK: Hanzelius - Body
 
     var body: some View {
         ZStack {
@@ -81,7 +81,7 @@ struct NoteEditorView: View {
     }
 }
 
-// MARK: - Preview
+// MARK: Hanzelius - Preview
 
 #Preview {
     NavigationStack {
