@@ -7,21 +7,16 @@
 
 import SwiftUI
 
-/// Displays the user's account details and settings options.
 struct ProfileView: View {
-    // MARK: - Properties
     
     @EnvironmentObject var authVM: AuthViewModel
     @StateObject private var adjReqVM = AdjudicatorRequestViewModel()
     @State private var showLogoutAlert = false
     @State private var showAdjudicatorForm = false
     
-    // MARK: - Body
-    
     var body: some View {
         NavigationStack {
             ZStack {
-                // 1. KONSISTENSI BACKGROUND KREM
                 Color.bgCream.ignoresSafeArea()
                 
                 ScrollView(showsIndicators: false) {
@@ -52,11 +47,14 @@ struct ProfileView: View {
                         .padding(.top, 16)
                         
                         // --- SETTINGS MENU SECTION ---
-                        // 2. KONSISTENSI DESAIN KARTU (Putih, Melengkung, Bayangan Halus)
                         VStack(spacing: 0) {
-                            ProfileMenuRow(icon: "person.text.rectangle", title: "Edit Account Information")
+                            // 1. MENU EDIT ACCOUNT
+                            NavigationLink(destination: EditProfileView()) {
+                                ProfileMenuRow(icon: "person.text.rectangle", title: "Edit Account Information")
+                            }
+                            .buttonStyle(.plain)
                             
-                            // Menu khusus Debater untuk Apply jadi Adjudicator
+                            // Menu khusus Debater
                             if authVM.currentUser?.role == .debater {
                                 Divider().padding(.leading, 40)
                                 
@@ -86,13 +84,16 @@ struct ProfileView: View {
                                     .padding()
                                 }
                                 .disabled(adjReqVM.hasPendingRequest)
+                                .buttonStyle(.plain)
                             }
                             
                             Divider().padding(.leading, 40)
-                            ProfileMenuRow(icon: "bell.badge.fill", title: "System Notifications")
                             
-                            Divider().padding(.leading, 40)
-                            ProfileMenuRow(icon: "doc.text.fill", title: "Terms of Service (TOS)")
+                            // 2. MENU TOS
+                            NavigationLink(destination: TermsOfServiceView()) {
+                                ProfileMenuRow(icon: "doc.text.fill", title: "Terms of Service (TOS)")
+                            }
+                            .buttonStyle(.plain)
                         }
                         .background(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -103,7 +104,6 @@ struct ProfileView: View {
                         .shadow(color: Color.black.opacity(0.02), radius: 8, y: 4)
                         
                         // --- LOGOUT BUTTON ---
-                        // 3. KONSISTENSI TOMBOL (Rounded, btnNegative)
                         Button(action: { showLogoutAlert = true }) {
                             Text("Log Out")
                                 .font(.headline)
@@ -117,7 +117,7 @@ struct ProfileView: View {
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 16)
-                    .padding(.bottom, 120) // Padding ekstra untuk TabBar
+                    .padding(.bottom, 120)
                 }
             }
             .navigationTitle("My Profile")
@@ -143,11 +143,6 @@ struct ProfileView: View {
     }
 }
 
-// MARK: - Preview
-#Preview {
-    ProfileView()
-        .environmentObject(AuthViewModel())
-}
 // MARK: - Preview
 
 #Preview {
