@@ -21,7 +21,7 @@ struct MainView: View {
                     .tabItem { Label("Competitions", systemImage: "trophy.fill") }
                 
                 SparringView(viewModel: sparringVM)
-                    .tabItem { Label("Sparring", systemImage: "figure.fencing") }
+                    .tabItem { Label("Sparring", systemImage: "person.2.fill") }
                 
                 MotionArchiveView(viewModel: motionVM)
                     .tabItem { Label("Motions", systemImage: "books.vertical.fill") }
