@@ -8,14 +8,12 @@
 import SwiftUI
 
 struct ExploreMotionListView: View {
-    
-    // MARK: Hanzelius - Properties
-    
+
+    // MARK: - Properties
     @ObservedObject var viewModel: MotionArchiveViewModel
     @EnvironmentObject var authVM: AuthViewModel
-    
-    // MARK: Hanzelius - Body
-    
+
+    // MARK: - Body
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 12) {
@@ -46,11 +44,11 @@ struct ExploreMotionListView: View {
 
             LazyVStack(spacing: 12) {
                 ForEach(viewModel.filteredMotions) { motion in
-                    let isSaved =
-                        motion.isWishlisted
-                        || viewModel.myNotes.contains(where: {
-                            $0.motionTitle == motion.title
-                        })
+                    // Re-calculate isSaved untuk setiap motion setiap kali view di-render ulang
+                    // Karena viewModel.myNotes adalah @Published, View akan update otomatis saat list berubah
+                    let isSaved = viewModel.myNotes.contains(where: {
+                        $0.motionTitle == motion.title
+                    })
 
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
@@ -101,7 +99,9 @@ struct ExploreMotionListView: View {
                                 )
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                             }
-                            .disabled(isSaved)
+                            // Hapus .disabled(isSaved) agar user bisa tahu statusnya tanpa mengunci tombol (opsional),
+                            // atau biarkan kalau kamu mau tetap dikunci setelah save.
+                            // Jika ingin bisa di-save ulang setelah hapus, .disabled harus dihilangkan atau diset false saat tidak saved.
                         } else {
                             HStack {
                                 Spacer()
@@ -136,7 +136,6 @@ struct ExploreMotionListView: View {
 }
 
 // MARK: - Preview
-
 #Preview {
     ExploreMotionListView(
         viewModel: MotionArchiveViewModel(
