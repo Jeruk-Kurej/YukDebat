@@ -10,15 +10,15 @@ import FirebaseAuth
 import FirebaseFirestore
 import Foundation
 
-/// Manages the fetching of competitions and handles promoter submissions.
 class CompetitionViewModel: ObservableObject {
-    
     // MARK: - Published Properties
     @Published var activeCompetitions: [CompetitionModel] = []
     @Published var myPendingCompetitions: [CompetitionModel] = []
     
     @Published var name: String = ""
     @Published var desc: String = ""
+    @Published var eventDate: Date = Date()
+    @Published var registrationUrl: String = ""
     @Published var selectedImageData: Data? = nil
     
     @Published var isLoading: Bool = false
@@ -26,14 +26,10 @@ class CompetitionViewModel: ObservableObject {
     
     var hasError: Bool { return statusMessage?.contains("Failed") ?? false }
     
-    // MARK: - Private Properties
     private let db = Firestore.firestore()
-    private let storageService: CloudStorageProtocol = CloudinaryService() // Injeksi Dependency Cloudinary
-    
-    // MARK: - Methods
+    private let storageService: CloudStorageProtocol = CloudinaryService()
     
     func fetchCompetitions() {
-        // Logika Fetch tetap sama (jangan diubah)
         guard let userId = Auth.auth().currentUser?.uid else { return }
         db.collection("competitions").addSnapshotListener { [weak self] snapshot, _ in
             guard let docs = snapshot?.documents else { return }
@@ -44,54 +40,57 @@ class CompetitionViewModel: ObservableObject {
                 let status = ReviewStatus(rawValue: data["status"] as? String ?? "PENDING") ?? .pending
                 let promoterId = data["promoterId"] as? String ?? ""
                 let model = CompetitionModel(
-                    id: doc.documentID, promoterId: promoterId, promoterEmail: data["promoterEmail"] as? String ?? "",
-                    name: data["name"] as? String ?? "", description: data["description"] as? String ?? "",
+                    id: doc.documentID,
+                    promoterId: promoterId,
+                    promoterEmail: data["promoterEmail"] as? String ?? "",
+                    name: data["name"] as? String ?? "",
+                    description: data["description"] as? String ?? "",
                     eventDate: (data["eventDate"] as? Timestamp)?.dateValue() ?? Date(),
-                    registrationUrl: data["registrationUrl"] as? String ?? "", posterStorageUrl: data["posterUrl"] as? String ?? "",
+                    registrationUrl: data["registrationUrl"] as? String ?? "",
+                    posterStorageUrl: data["posterUrl"] as? String ?? "",
                     status: status
                 )
-                if status == .active { active.append(model) } else if status == .pending && promoterId == userId { pending.append(model) }
+                if status == .active { active.append(model) }
+                else if status == .pending && promoterId == userId { pending.append(model) }
             }
             DispatchQueue.main.async { self?.activeCompetitions = active; self?.myPendingCompetitions = pending }
         }
     }
     
     func submitCompetitionData() {
-        guard let userId = Auth.auth().currentUser?.uid, let userEmail = Auth.auth().currentUser?.email, let imageData = selectedImageData else { return }
+        guard let userId = Auth.auth().currentUser?.uid,
+              let userEmail = Auth.auth().currentUser?.email,
+              let imageData = selectedImageData else { return }
         
         isLoading = true
-        
         Task {
             do {
-                // 1. Upload ke Cloudinary dan dapatkan secure_url HTTP
                 let uploadedUrl = try await storageService.uploadImage(imageData: imageData)
-                
-                // 2. Simpan URL ke Firestore
                 let compId = UUID().uuidString
+                
                 let data: [String: Any] = [
-                    "id": compId, "promoterId": userId, "promoterEmail": userEmail,
-                    "name": name, "description": desc,
-                    "eventDate": Timestamp(date: Date().addingTimeInterval(86400 * 30)),
-                    "registrationUrl": "", "posterUrl": uploadedUrl,
+                    "id": compId,
+                    "promoterId": userId,
+                    "promoterEmail": userEmail,
+                    "name": name,
+                    "description": desc,
+                    "eventDate": Timestamp(date: self.eventDate),
+                    "registrationUrl": self.registrationUrl,
+                    "posterUrl": uploadedUrl,
                     "status": ReviewStatus.pending.rawValue
                 ]
                 
                 db.collection("competitions").document(compId).setData(data) { [weak self] error in
-                        DispatchQueue.main.async {
-                            self?.isLoading = false
-                            if let error = error {
-                                self?.statusMessage = "Failed to submit: \(error.localizedDescription)"
-                                // HAPUS reset form di sini! Biarkan user memperbaiki input.
-                            } else {
-                                self?.statusMessage = "Competition submitted!"
-                                self?.name = ""; self?.desc = ""; self?.selectedImageData = nil // Reset hanya kalau sukses
-                            }
+                    DispatchQueue.main.async {
+                        self?.isLoading = false
+                        if let error = error {
+                            self?.statusMessage = "Failed to submit: \(error.localizedDescription)"
+                        } else {
+                            self?.statusMessage = "Competition submitted!"
+                            self?.name = ""; self?.desc = ""; self?.selectedImageData = nil
+                            self?.registrationUrl = ""; self?.eventDate = Date()
                         }
                     }
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                    self.statusMessage = "Competition submitted for Admin review!"
-                    self.name = ""; self.desc = ""; self.selectedImageData = nil
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -100,6 +99,5 @@ class CompetitionViewModel: ObservableObject {
                 }
             }
         }
-        
     }
 }
