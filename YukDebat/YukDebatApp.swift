@@ -5,19 +5,34 @@
 //  Created by Bryan Carlie Lukito Setiawan on 13/05/26.
 //
 
-import FirebaseAuth
 import FirebaseCore
 import SwiftUI
+import UserNotifications  
 
-// 1. Inisialisasi Firebase
-class AppDelegate: NSObject, UIApplicationDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate,
+    UNUserNotificationCenterDelegate
+{
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication
             .LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         FirebaseApp.configure()
+
+        // 1. Set delegate ke self
+        UNUserNotificationCenter.current().delegate = self
         return true
+    }
+
+    // 2. Fungsi ini memaksa banner muncul KAPANPUN (bahkan saat app terbuka)
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler:
+            @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        // Tampilkan banner, suara, dan badge
+        completionHandler([.banner, .sound, .badge])
     }
 }
 
