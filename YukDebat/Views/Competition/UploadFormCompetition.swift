@@ -57,23 +57,42 @@ struct UploadFormCompetition: View {
                             .frame(minHeight: 80)
                     }
                     .listRowBackground(Color.white)
+                    
+                    Button(action: {
+                        viewModel.submitCompetitionData()
+                    }) {
+                        Text("Create Competition")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                    .disabled(viewModel.isLoading)
+                    .listRowBackground(viewModel.isLoading ? Color.gray : Color.btnPositive)
                 }
                 .scrollContentBackground(.hidden)
+                
+                if viewModel.isLoading {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                    
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(.white)
+                        Text("Uploading...")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                    }
+                    .padding(32)
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(16)
+                }
             }
             .navigationTitle("Add Competition")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }.foregroundStyle(Color.btnNegative)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Submit") {
-                        viewModel.submitCompetitionData()
-                        dismiss()
-                    }
-                    .fontWeight(.bold)
-                    .foregroundStyle(Color.btnPositive)
-                    .disabled(viewModel.name.isEmpty || viewModel.desc.isEmpty || viewModel.selectedImageData == nil || viewModel.isLoading)
                 }
             }
         }
