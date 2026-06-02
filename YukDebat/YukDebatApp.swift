@@ -5,23 +5,26 @@
 //  Created by Bryan Carlie Lukito Setiawan on 13/05/26.
 //
 
-import SwiftUI
-import FirebaseCore
 import FirebaseAuth
+import FirebaseCore
+import SwiftUI
 
 // 1. Inisialisasi Firebase
 class AppDelegate: NSObject, UIApplicationDelegate {
-  func application(_ application: UIApplication,
-                   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-    FirebaseApp.configure()
-    return true
-  }
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication
+            .LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        FirebaseApp.configure()
+        return true
+    }
 }
 
 // 2. Layar Pemilah Sesi (Switcher)
 struct RootView: View {
     @EnvironmentObject var authVM: AuthViewModel
-    
+
     var body: some View {
         Group {
             if authVM.userSession != nil {
@@ -46,7 +49,11 @@ struct RootView: View {
 struct YukDebatApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject var authViewModel = AuthViewModel()
-    
+
+    init() {
+        NotificationManager.shared.requestAuthorization()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()

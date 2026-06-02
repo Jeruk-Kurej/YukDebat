@@ -19,6 +19,10 @@ class MotionArchiveViewModel: ObservableObject {
     @Published var communityNotes: [CaseBuildingNoteModel] = []
     @Published var isGenerating: Bool = false
 
+    // REVISI: Properti baru untuk kontrol error toast
+    @Published var showHighDemandToast: Bool = false
+    @Published var toastMessage: String = ""
+
     var filteredMotions: [MotionModel] {
         if searchText.isEmpty { return motionsList }
         return motionsList.filter {
@@ -47,7 +51,13 @@ class MotionArchiveViewModel: ObservableObject {
 
     func triggerFetchMotion() {
         guard !isGenerating else { return }
-        isGenerating = true
+
+        // Aktifkan skeleton loader secara real-time di UI
+        DispatchQueue.main.async {
+            self.isGenerating = true
+            self.showHighDemandToast = false
+        }
+
         Task {
             do {
                 let response = try await apiProxy.callExternalAPI(
@@ -59,13 +69,28 @@ class MotionArchiveViewModel: ObservableObject {
                     title: response["title"] as? String ?? "Mosi Baru",
                     isWishlisted: false
                 )
+
                 DispatchQueue.main.async {
                     self.motionsList.insert(newMotion, at: 0)
+                    self.isGenerating = false  // Hapus skeleton loader setelah sukses
                 }
-                try await Task.sleep(nanoseconds: 600_000_000)
-                DispatchQueue.main.async { self.isGenerating = false }
             } catch {
-                DispatchQueue.main.async { self.isGenerating = false }
+                DispatchQueue.main.async {
+                    self.isGenerating = false  // REVISI: Sesuai instruksi, hapus skeleton jika terjadi kegagalan/high demand
+
+                    // Deteksi kode error 503 atau pesan sibuk dari Google
+                    let errStr = error.localizedDescription.lowercased()
+                    if errStr.contains("503") || errStr.contains("demand")
+                        || errStr.contains("unavailable")
+                    {
+                        self.toastMessage =
+                            "Server Gemini sedang penuh (High Demand). Silakan coba lagi nanti!"
+                    } else {
+                        self.toastMessage =
+                            "Gagal memproses AI mosi. Periksa koneksi internet."
+                    }
+                    self.showHighDemandToast = true
+                }
             }
         }
     }

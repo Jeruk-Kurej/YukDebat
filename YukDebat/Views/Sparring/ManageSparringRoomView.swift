@@ -19,12 +19,36 @@ struct ManageSparringRoomView: View {
         NavigationStack {
             ZStack {
                 Color.bgCream.ignoresSafeArea()
-                List {
-                    statusSection
-                    pendingRequestsSection
-                    participantsSection
+
+                VStack(spacing: 0) {
+                    List {
+                        statusSection
+                        pendingRequestsSection
+                        participantsSection
+                    }
+                    .scrollContentBackground(.hidden)
+
+                    // REVISI: Tombol Aksi untuk Mengakhiri Sesi Debat (End Sparring)
+                    if room.state == .preparing || room.state == .ongoing {
+                        Button(action: {
+                            viewModel.completeRoom(roomId: room.id)
+                            dismiss()  // Otomatis menutup sheet setelah room selesai
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark.seal.fill")
+                                Text("End Sparring Session")
+                                    .font(.headline)
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.btnNegative)  // Menggunakan warna merah aksen pembatalan/selesai
+                            .cornerRadius(12)
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, 16)
+                    }
                 }
-                .scrollContentBackground(.hidden)
             }
             .navigationTitle("Manage Room")
             .navigationBarTitleDisplayMode(.inline)
@@ -82,11 +106,9 @@ struct ManageSparringRoomView: View {
                 ForEach(pendingList) { participant in
                     HStack {
                         VStack(alignment: .leading) {
-                            VStack(alignment: .leading) {
-                                Text(participant.userName).font(
-                                    .subheadline.bold()
-                                )
-                            }
+                            Text(participant.userName).font(
+                                .subheadline.bold()
+                            )
                         }
                         Spacer()
                         Button(action: {
@@ -98,6 +120,7 @@ struct ManageSparringRoomView: View {
                             Image(systemName: "xmark.circle.fill").font(.title2)
                                 .foregroundStyle(Color.btnNegative)
                         }.buttonStyle(PlainButtonStyle())
+
                         Button(action: {
                             viewModel.acceptRequest(
                                 roomId: room.id,
@@ -139,9 +162,10 @@ struct ManageSparringRoomView: View {
                 .foregroundStyle(Color.accentWalnut)
 
             VStack(alignment: .leading) {
+                // SINKRONISASI: Tampilkan nama debater yang asli
                 Text(
                     participant.userId == viewModel.currentUserId
-                        ? "You" : "Debater"
+                        ? "You (\(participant.userName))" : participant.userName
                 )
                 .font(.subheadline.bold())
                 Text("user@example.com")
@@ -156,12 +180,23 @@ struct ManageSparringRoomView: View {
                 .clipShape(Capsule())
         }
         .padding(.vertical, 4)
-        .contextMenu {
+        .workspaceContextMenu(participant: participant)
+    }
+}
+
+// Extension pembantu untuk context menu agar kode tetap SOLID dan bersih
+extension View {
+    @ViewBuilder
+    func workspaceContextMenu(participant: ParticipantModel) -> some View {
+        self.contextMenu {
             Button(
                 role: .destructive,
                 action: {
-                    self.participantToRemove = participant
-                    self.showRemoveAlert = true
+                    // Penanganan logika hapus di view utama diurus lewat binding state
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("TriggerRemoveAlert"),
+                        object: participant
+                    )
                 }
             ) {
                 Label("Remove Participant", systemImage: "person.badge.minus")
@@ -169,6 +204,7 @@ struct ManageSparringRoomView: View {
         }
     }
 }
+
 #Preview {
     ManageSparringRoomView(
         room: SparringRoomModel(

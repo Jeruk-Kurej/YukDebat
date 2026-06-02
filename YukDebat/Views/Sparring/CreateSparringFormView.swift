@@ -7,10 +7,14 @@
 
 import SwiftUI
 
-/// A form view that allows users to create and schedule a new sparring room.
 struct CreateSparringFormView: View {
     @ObservedObject var viewModel: SparringViewModel
     @Environment(\.dismiss) var dismiss
+
+    // Validasi form required field
+    private var isFormInvalid: Bool {
+        viewModel.formMotionTitle.isEmpty || viewModel.formMeetingLink.isEmpty
+    }
 
     var body: some View {
         NavigationStack {
@@ -29,11 +33,10 @@ struct CreateSparringFormView: View {
                         )
                         .lineLimit(2...4)
 
-                        // REVISI: Tambahkan in: Date()... agar tidak bisa pilih waktu lampau
                         DatePicker(
                             "Scheduled Time *",
                             selection: $viewModel.formScheduledTime,
-                            in: Date()...,  // <--- INI KUNCI UTAMANYA!
+                            in: Date()...,
                             displayedComponents: [.date, .hourAndMinute]
                         )
                         .datePickerStyle(.compact)
@@ -51,10 +54,13 @@ struct CreateSparringFormView: View {
                             text: $viewModel.formMeetingLink
                         )
                         .keyboardType(.URL).textInputAutocapitalization(.never)
+
+                        // Additional Notes bersifat opsional -> Bersihkan teks kata (Optional)
                         TextField(
-                            "Additional Notes (Optional)",
+                            "Additional Notes",
                             text: $viewModel.formSpecialNotes
                         )
+
                         Toggle(
                             "Make Room Private",
                             isOn: $viewModel.formIsPrivate
@@ -63,20 +69,17 @@ struct CreateSparringFormView: View {
                     .listRowBackground(Color.white)
 
                     Button(action: {
-                        viewModel.submitRoomForm() 
+                        viewModel.submitRoomForm()
                     }) {
                         Text("Create Sparring Room")
                             .font(.headline)
-                            .foregroundStyle(
-                                viewModel.formMeetingLink.isEmpty
-                                    ? Color.gray : .white
-                            )
+                            .foregroundStyle(.white)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    .disabled(viewModel.formMeetingLink.isEmpty)
+                    // KONSISTENSI BUTTON: Jika required kosong, auto grey out & disabled
+                    .disabled(isFormInvalid)
                     .listRowBackground(
-                        viewModel.formMeetingLink.isEmpty
-                            ? Color.gray.opacity(0.15) : Color.btnPositive
+                        isFormInvalid ? Color.gray : Color.btnPositive
                     )
                 }
                 .scrollContentBackground(.hidden)

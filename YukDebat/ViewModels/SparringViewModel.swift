@@ -1,4 +1,10 @@
+//
 //  SparringViewModel.swift
+//  YukDebat
+//
+//  Created by Bryan Carlie Lukito Setiawan
+//
+
 import Combine
 import FirebaseAuth
 import FirebaseFirestore
@@ -43,7 +49,7 @@ class SparringViewModel: ObservableObject {
                 self.lobbyRooms = docs.compactMap { doc in
                     let data = doc.data()
 
-                    // Parse Peserta
+                    // Parse Peserta dengan backward compatibility (userName)
                     let participantsData =
                         data["participants"] as? [[String: Any]] ?? []
                     let participantsList = participantsData.compactMap {
@@ -63,7 +69,7 @@ class SparringViewModel: ObservableObject {
                         )
                     }
 
-                    // Parse Antrean PENDING REQUEST
+                    // Parse Antrean PENDING REQUEST dengan backward compatibility
                     let pendingData =
                         data["pendingRequests"] as? [[String: Any]] ?? []
                     let pendingList = pendingData.compactMap {
@@ -83,10 +89,31 @@ class SparringViewModel: ObservableObject {
                         )
                     }
 
-                    tempPending[doc.documentID] = pendingList
+                    let roomId = doc.documentID
+                    tempPending[roomId] = pendingList
+
+                    // NOTIFIKASI LOCAL DETECTOR: Deteksi jika user lokal baru saja di-approve oleh Host
+                    if let previousRoom = self.lobbyRooms.first(where: {
+                        $0.id == roomId
+                    }) {
+                        let wasPending =
+                            self.pendingRequests[roomId]?.contains(where: {
+                                $0.userId == self.currentUserId
+                            }) ?? false
+                        let isNowParticipant = participantsList.contains(
+                            where: { $0.userId == self.currentUserId })
+
+                        if wasPending && isNowParticipant {
+                            NotificationManager.shared.sendNotification(
+                                title: "Permintaan Sparring Diterima! 🎉",
+                                body:
+                                    "Host telah menyetujui permintaanmu untuk bergabung di mosi: \(data["motionTitle"] as? String ?? "")"
+                            )
+                        }
+                    }
 
                     return SparringRoomModel(
-                        id: doc.documentID,
+                        id: roomId,
                         hostId: data["hostId"] as? String ?? "",
                         scheduledTime: (data["scheduledTime"] as? Timestamp)?
                             .dateValue() ?? Date(),
@@ -184,7 +211,7 @@ class SparringViewModel: ObservableObject {
         let mode: RegMode = isTeam ? .team : .solo
         let newRequest: [String: Any] = [
             "userId": userId,
-            "userName": userName,  // Sekarang mengirimkan nama
+            "userName": userName,
             "roleSlot": role.rawValue,
             "regMode": mode.rawValue,
         ]
@@ -224,8 +251,6 @@ class SparringViewModel: ObservableObject {
             "pendingRequests": updatedPending,
         ])
     }
-
-    // ... (Fungsi lain seperti rejectRequest, cancelRequest, dll tetap sama, pastikan saja mapping datanya menyertakan userName)
 
     func rejectRequest(roomId: String, participantId: String) {
         guard let pendingList = pendingRequests[roomId] else { return }
@@ -295,11 +320,21 @@ class SparringViewModel: ObservableObject {
         let now = Date()
         for room in lobbyRooms {
             if room.scheduledTime <= now && room.state == .preparing {
-                let newState =
-                    room.participants.isEmpty ? "CANCELLED" : "ONGOING"
+                let isEmpty = room.participants.isEmpty
+                let newState = isEmpty ? "CANCELLED" : "ONGOING"
+
                 db.collection("sparring_rooms").document(room.id).updateData([
                     "state": newState
-                ])
+                ]) { _ in
+                    // NOTIFIKASI LOCAL: Picu jika room tercancel otomatis karena sepi pembeli/kosong
+                    if isEmpty && room.hostId == Auth.auth().currentUser?.uid {
+                        NotificationManager.shared.sendNotification(
+                            title: "Ruang Sparring Dibatalkan ❌",
+                            body:
+                                "Ruang sparring mosi '\(room.motionTitle)' otomatis dibatalkan karena tidak ada debater yang bergabung."
+                        )
+                    }
+                }
             }
         }
     }
@@ -313,4 +348,19 @@ class SparringViewModel: ObservableObject {
             for doc in docs { doc.reference.delete() }
         }
     }
+    
+    // Tambahkan fungsi ini di SparringViewModel.swift
+        func completeRoom(roomId: String) {
+            db.collection("sparring_rooms").document(roomId).updateData([
+                "state": "DONE"
+            ]) { error in
+                if error == nil {
+                    DispatchQueue.main.async {
+                        self.alertMessage = "Ruang sparring telah berhasil diselesaikan! 🏁"
+                    }
+                } else if let error = error {
+                    print("❌ Gagal menyelesaikan room: \(error.localizedDescription)")
+                }
+            }
+        }
 }
