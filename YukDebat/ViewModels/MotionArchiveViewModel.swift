@@ -9,6 +9,7 @@ import Combine
 import FirebaseAuth
 import FirebaseFirestore
 import Foundation
+import SwiftUI
 
 /// Manages fetching random motions and synchronizing case notes.
 class MotionArchiveViewModel: ObservableObject {
@@ -45,27 +46,40 @@ class MotionArchiveViewModel: ObservableObject {
         communityNotesListener?.remove()
     }
 
+    // Tambahkan instansiasi GeminiService di bagian properties atas ViewModel kamu
+    private let geminiService = GeminiService()
+
+    // Replace fungsi ini
     func triggerFetchMotion() {
         guard !isGenerating else { return }
         isGenerating = true
+
         Task {
             do {
-                let response = try await apiProxy.callExternalAPI(
-                    endpoint: "get-random-motion",
-                    parameters: [:]
-                )
+                // 1. Panggil Gemini Service
+                let generatedTitle = try await geminiService.generateMotion()
+
+                // 2. Buat Model Mosi Baru
                 let newMotion = MotionModel(
-                    id: response["id"] as? String ?? UUID().uuidString,
-                    title: response["title"] as? String ?? "Mosi Baru",
+                    id: UUID().uuidString,
+                    title: generatedTitle,
                     isWishlisted: false
                 )
+
+                // 3. Update UI di Main Thread
                 DispatchQueue.main.async {
-                    self.motionsList.insert(newMotion, at: 0)
+                    // Masukkan ke urutan paling atas dengan animasi
+                    withAnimation(.easeOut) {
+                        self.motionsList.insert(newMotion, at: 0)
+                    }
+                    self.isGenerating = false
                 }
-                try await Task.sleep(nanoseconds: 600_000_000)
-                DispatchQueue.main.async { self.isGenerating = false }
             } catch {
-                DispatchQueue.main.async { self.isGenerating = false }
+                DispatchQueue.main.async {
+                    self.isGenerating = false
+                    print("Gemini Error: \(error.localizedDescription)")
+                    // Opsional: Kalau API gagal, bisa fallback ke mosi lokal
+                }
             }
         }
     }
