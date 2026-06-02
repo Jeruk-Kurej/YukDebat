@@ -133,6 +133,8 @@ struct SparringRoomCard: View {
         }
     }
 
+    // Di dalam file SparringRoomCard.swift
+
     private var bodySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(room.motionTitle)
@@ -141,7 +143,15 @@ struct SparringRoomCard: View {
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Info Row (Room ID & Participant Count) ditata rapi secara horizontal
+            // TAMPILKAN NOTES JIKA ADA
+            if !room.specialNotes.isEmpty {
+                Text("Notes: \(room.specialNotes)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .italic()
+                    .padding(.top, 2)
+            }
+
             HStack(spacing: 16) {
                 HStack(spacing: 4) {
                     Image(systemName: "number.square.fill")
@@ -160,6 +170,52 @@ struct SparringRoomCard: View {
             .font(.caption.bold())
             .foregroundStyle(.secondary)
             .padding(.top, 2)
+        }
+    }
+
+    @ViewBuilder
+    private var actionButton: some View {
+        if room.state == .cancelled || room.state == .done {
+            Text(room.state.rawValue).font(.subheadline.bold()).foregroundStyle(
+                .gray
+            )
+        } else if viewModel.isUserHost(room: room) {
+            Button("Manage") { showManageSheet = true }
+                .font(.subheadline.bold()).foregroundStyle(.white)
+                .padding(.horizontal, 16).padding(.vertical, 8).background(
+                    Color.accentWalnut
+                )
+                .clipShape(Capsule())
+        } else if viewModel.isUserPending(room: room) {
+            Button("Cancel Request") { showCancelAlert = true }
+                .font(.subheadline.bold()).foregroundStyle(Color.btnNegative)
+        } else if viewModel.isUserInRoom(room: room) {
+            // --- REVISI: TOMBOL JOIN MEETING ---
+            HStack(spacing: 8) {
+                Button(action: { showLeaveAlert = true }) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                }
+                .foregroundStyle(Color.btnNegative)
+
+                Button("Join Meeting") {
+                    if let url = URL(string: room.meetingLink) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .font(.subheadline.bold()).foregroundStyle(.white)
+                .padding(.horizontal, 16).padding(.vertical, 8)
+                .background(Color.btnPositive)
+                .clipShape(Capsule())
+            }
+        } else {
+            Button(room.accessType == .privateAccess ? "Request" : "Join") {
+                showJoinOptions = true
+            }
+            .font(.subheadline.bold()).foregroundStyle(.white)
+            .padding(.horizontal, 16).padding(.vertical, 8).background(
+                Color.btnPositive
+            )
+            .clipShape(Capsule())
         }
     }
 
@@ -206,36 +262,6 @@ struct SparringRoomCard: View {
             .background(color.opacity(0.1))
             .foregroundStyle(color)
             .clipShape(Capsule())
-    }
-
-    @ViewBuilder
-    private var actionButton: some View {
-        if room.state == .cancelled || room.state == .done {
-            Text(room.state.rawValue).font(.subheadline.bold()).foregroundStyle(
-                .gray
-            )
-        } else if viewModel.isUserHost(room: room) {
-            Button("Manage") { showManageSheet = true }
-                .font(.subheadline.bold()).foregroundStyle(.white)
-                .padding(.horizontal, 16).padding(.vertical, 8).background(
-                    Color.accentWalnut
-                ).clipShape(Capsule())
-        } else if viewModel.isUserPending(room: room) {
-            // Tombol Cancel Request sekarang mentrigger Alert
-            Button("Cancel Request") { showCancelAlert = true }
-                .font(.subheadline.bold()).foregroundStyle(Color.btnNegative)
-        } else if viewModel.isUserInRoom(room: room) {
-            Button("Leave") { showLeaveAlert = true }
-                .font(.subheadline.bold()).foregroundStyle(Color.btnNegative)
-        } else {
-            Button(room.accessType == .privateAccess ? "Request" : "Join") {
-                showJoinOptions = true
-            }
-            .font(.subheadline.bold()).foregroundStyle(.white)
-            .padding(.horizontal, 16).padding(.vertical, 8).background(
-                Color.btnPositive
-            ).clipShape(Capsule())
-        }
     }
 
     private var stateColor: Color {

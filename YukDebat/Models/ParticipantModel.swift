@@ -13,6 +13,7 @@ struct ParticipantModel: Codable, Identifiable {
     // MARK: - Properties
     var id: String { userId }
     let userId: String
+    let userName: String
     let roleSlot: RoleSlotType
     let regMode: RegMode
 }
