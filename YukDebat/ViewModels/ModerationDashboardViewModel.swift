@@ -17,7 +17,6 @@ class ModerationDashboardViewModel: ObservableObject {
     @Published var approvedAdjudicators: [AdjudicatorRequestModel] = []
     @Published var allUsers: [UserModel] = []
     @Published var publicNotes: [CaseBuildingNoteModel] = []
-    @Published var pendingMotions: [MotionRequestModel] = []
 
     // MARK: - Private Properties
 
@@ -26,7 +25,6 @@ class ModerationDashboardViewModel: ObservableObject {
     // MARK: - Methods
 
     func fetchAllModeration() {
-        // Fetch Competitions
         db.collection("competitions").addSnapshotListener { snapshot, _ in
             guard let docs = snapshot?.documents else { return }
             var tempPending: [CompetitionModel] = []
@@ -56,8 +54,7 @@ class ModerationDashboardViewModel: ObservableObject {
             self.pendingList = tempPending
             self.approvedList = tempApproved
         }
-
-        // Fetch Adjudicator Requests
+        
         db.collection("adjudicator_requests").addSnapshotListener {
             snapshot,
             _ in
@@ -87,27 +84,7 @@ class ModerationDashboardViewModel: ObservableObject {
             self.pendingAdjudicators = tempPendingAdj
             self.approvedAdjudicators = tempApprovedAdj
         }
-
-        // Fetch Custom Motion Requests
-        db.collection("motion_requests").whereField(
-            "status",
-            isEqualTo: "PENDING"
-        ).addSnapshotListener { snapshot, _ in
-            guard let docs = snapshot?.documents else { return }
-            self.pendingMotions = docs.compactMap { doc in
-                let data = doc.data()
-                return MotionRequestModel(
-                    id: doc.documentID,
-                    title: data["title"] as? String ?? "",
-                    submitterId: data["submitterId"] as? String ?? "",
-                    status: .pending,
-                    submittedAt: (data["submittedAt"] as? Timestamp)?
-                        .dateValue() ?? Date()
-                )
-            }
-        }
-
-        // Fetch Users and Notes
+        
         db.collection("users").addSnapshotListener { snapshot, _ in
             guard let docs = snapshot?.documents else { return }
             self.allUsers = docs.compactMap { doc in
@@ -159,28 +136,9 @@ class ModerationDashboardViewModel: ObservableObject {
             "status": status
         ])
     }
+
     func deletePublicNote(noteId: String) {
         db.collection("case_notes").document(noteId).delete()
-    }
-    func rejectMotionRequest(reqId: String) {
-        db.collection("motion_requests").document(reqId).updateData([
-            "status": "REJECTED"
-        ])
-    }
-    func approveMotionRequest(req: MotionRequestModel) {
-        let batch = db.batch()
-        batch.updateData(
-            ["status": "ACTIVE"],
-            forDocument: db.collection("motion_requests").document(req.id)
-        )
-        let officialMotionData: [String: Any] = [
-            "id": req.id, "title": req.title,
-        ]
-        batch.setData(
-            officialMotionData,
-            forDocument: db.collection("motions").document(req.id)
-        )
-        batch.commit { _ in }
     }
 
     func approveAdjudicator(reqId: String, userId: String) {
@@ -198,7 +156,6 @@ class ModerationDashboardViewModel: ObservableObject {
 
     /// Toggles the suspension state of a user. Includes a security check to prevent Admin suspension.
     func suspendUser(user: UserModel, isActive: Bool) {
-        // SECURITY CHECK: Menangkal dari level logika bisnis
         guard user.role != .admin else {
             print("Action Denied: Administrator accounts cannot be suspended.")
             return

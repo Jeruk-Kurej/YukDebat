@@ -10,7 +10,7 @@ import SwiftUI
 struct ModerationDashboardView: View {
     @ObservedObject var viewModel: ModerationDashboardViewModel
     @EnvironmentObject var authVM: AuthViewModel
-    
+
     @State private var selectedTab = 0
     @State private var userToManage: UserModel? = nil
 
@@ -22,9 +22,13 @@ struct ModerationDashboardView: View {
                     tabPicker
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 16) {
-                            if selectedTab == 0 { pendingTabContent }
-                            else if selectedTab == 1 { historyTabContent }
-                            else { usersAndContentTabContent }
+                            if selectedTab == 0 {
+                                pendingTabContent
+                            } else if selectedTab == 1 {
+                                historyTabContent
+                            } else {
+                                usersAndContentTabContent
+                            }
                         }
                         .padding(.vertical, 8).padding(.bottom, 120)
                     }
@@ -33,103 +37,203 @@ struct ModerationDashboardView: View {
             .navigationTitle("Admin Dashboard")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { viewModel.fetchAllModeration() }
-            .alert("Confirm Action", isPresented: Binding(
-                get: { userToManage != nil }, set: { if !$0 { userToManage = nil } }
-            ), presenting: userToManage) { targetUser in
-                Button(targetUser.isActive ? "Suspend Account" : "Unsuspend Account", role: .destructive) {
-                    viewModel.suspendUser(user: targetUser, isActive: !targetUser.isActive)
+            .alert(
+                "Confirm Action",
+                isPresented: Binding(
+                    get: { userToManage != nil },
+                    set: { if !$0 { userToManage = nil } }
+                ),
+                presenting: userToManage
+            ) { targetUser in
+                Button(
+                    targetUser.isActive
+                        ? "Suspend Account" : "Unsuspend Account",
+                    role: .destructive
+                ) {
+                    viewModel.suspendUser(
+                        user: targetUser,
+                        isActive: !targetUser.isActive
+                    )
                 }
                 Button("Cancel", role: .cancel) {}
             } message: { targetUser in
-                Text("Are you sure you want to \(targetUser.isActive ? "suspend" : "unsuspend") the account for \(targetUser.name)?")
+                Text(
+                    "Are you sure you want to \(targetUser.isActive ? "suspend" : "unsuspend") the account for \(targetUser.name)?"
+                )
             }
         }
     }
-    
+
     private var tabPicker: some View {
         Picker("Admin Tabs", selection: $selectedTab) {
-            Text("Pending").tag(0); Text("History").tag(1); Text("Users & Content").tag(2)
+            Text("Pending").tag(0)
+            Text("History").tag(1)
+            Text("Users & Content").tag(2)
         }
-        .pickerStyle(.segmented).padding(.horizontal, 20).padding(.vertical, 8).background(Color.bgCream)
+        .pickerStyle(.segmented).padding(.horizontal, 20).padding(.vertical, 8)
+        .background(Color.bgCream)
     }
-    
+
     @ViewBuilder
     private var pendingTabContent: some View {
-        Section(header: Text("Custom Motions").font(.subheadline.bold()).foregroundStyle(.blue).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)) {
-            if viewModel.pendingMotions.isEmpty { Text("No pending motion requests.").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24) } else {
-                ForEach(viewModel.pendingMotions) { req in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(req.title).font(.headline).lineLimit(2) // REVISI: Kategori dihapus
-                        }
-                        Spacer()
-                        Button(action: { viewModel.rejectMotionRequest(reqId: req.id) }) { Image(systemName: "xmark.circle.fill").font(.title2).foregroundStyle(Color.btnNegative) }
-                        Button(action: { viewModel.approveMotionRequest(req: req) }) { Image(systemName: "checkmark.circle.fill").font(.title2).foregroundStyle(Color.btnPositive) }
-                        .padding(.leading, 8)
+
+        Section(
+            header: Text("Competitions").font(.subheadline.bold())
+                .foregroundStyle(.orange).padding(.horizontal, 24).frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
+        ) {
+            if viewModel.pendingList.isEmpty {
+                Text("No pending competitions.").font(.caption).foregroundStyle(
+                    .secondary
+                ).padding(.horizontal, 24)
+            } else {
+                ForEach(viewModel.pendingList) { comp in
+                    AdminPendingCard(comp: comp) { action in
+                        viewModel.updateStatus(
+                            compId: comp.id,
+                            to: action == .approve ? "ACTIVE" : "REJECTED"
+                        )
                     }
-                    .padding(16).background(Color.white).clipShape(RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1)).padding(.horizontal, 20)
                 }
             }
         }
-        
-        Divider().padding(.vertical, 16)
-
-        Section(header: Text("Competitions").font(.subheadline.bold()).foregroundStyle(.orange).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)) {
-            if viewModel.pendingList.isEmpty { Text("No pending competitions.").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24) } else {
-                ForEach(viewModel.pendingList) { comp in AdminPendingCard(comp: comp) { action in viewModel.updateStatus(compId: comp.id, to: action == .approve ? "ACTIVE" : "REJECTED") } }
-            }
-        }
 
         Divider().padding(.vertical, 16)
 
-        Section(header: Text("Adjudicator Requests").font(.subheadline.bold()).foregroundStyle(.purple).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)) {
-            if viewModel.pendingAdjudicators.isEmpty { Text("No pending adjudicator requests.").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24) } else {
-                ForEach(viewModel.pendingAdjudicators) { req in AdminAdjudicatorRow(req: req) { viewModel.approveAdjudicator(reqId: req.id, userId: req.userId) } }
+        Section(
+            header: Text("Adjudicator Requests").font(.subheadline.bold())
+                .foregroundStyle(.purple).padding(.horizontal, 24).frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
+        ) {
+            if viewModel.pendingAdjudicators.isEmpty {
+                Text("No pending adjudicator requests.").font(.caption)
+                    .foregroundStyle(.secondary).padding(.horizontal, 24)
+            } else {
+                ForEach(viewModel.pendingAdjudicators) { req in
+                    AdminAdjudicatorRow(req: req) {
+                        viewModel.approveAdjudicator(
+                            reqId: req.id,
+                            userId: req.userId
+                        )
+                    }
+                }
             }
         }
     }
-    
+
     @ViewBuilder
     private var historyTabContent: some View {
-        Section(header: Text("Approved Competitions").font(.subheadline.bold()).foregroundStyle(.green).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)) {
-            if viewModel.approvedList.isEmpty { Text("No approved competitions yet.").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24) } else {
-                // REVISI (Catatan untuk Point 1): AdminHistoryRow tidak memiliki tombol action, jadi murni history baca saja
-                ForEach(viewModel.approvedList) { comp in AdminHistoryRow(comp: comp) }
+        Section(
+            header: Text("Approved Competitions").font(.subheadline.bold())
+                .foregroundStyle(.green).padding(.horizontal, 24).frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
+        ) {
+            if viewModel.approvedList.isEmpty {
+                Text("No approved competitions yet.").font(.caption)
+                    .foregroundStyle(.secondary).padding(.horizontal, 24)
+            } else {
+                ForEach(viewModel.approvedList) { comp in
+                    AdminHistoryRow(comp: comp)
+                }
             }
         }
-        
+
         Divider().padding(.vertical, 16)
-        
-        Section(header: Text("Approved Adjudicators").font(.subheadline.bold()).foregroundStyle(.purple).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)) {
-            if viewModel.approvedAdjudicators.isEmpty { Text("No approved adjudicators yet.").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 24) } else {
-                ForEach(viewModel.approvedAdjudicators) { req in AdminAdjudicatorHistoryRow(req: req) }
+
+        Section(
+            header: Text("Approved Adjudicators").font(.subheadline.bold())
+                .foregroundStyle(.purple).padding(.horizontal, 24).frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
+        ) {
+            if viewModel.approvedAdjudicators.isEmpty {
+                Text("No approved adjudicators yet.").font(.caption)
+                    .foregroundStyle(.secondary).padding(.horizontal, 24)
+            } else {
+                ForEach(viewModel.approvedAdjudicators) { req in
+                    AdminAdjudicatorHistoryRow(req: req)
+                }
             }
         }
     }
-    
+
     @ViewBuilder
     private var usersAndContentTabContent: some View {
-        // [Konten sama dengan sebelumnya, tidak ada perubahan, tombol Suspend memunculkan Alert]
-        Section(header: Text("User Management").font(.subheadline.bold()).foregroundStyle(.blue).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)) {
+        Section(
+            header: Text("User Management").font(.subheadline.bold())
+                .foregroundStyle(.blue).padding(.horizontal, 24).frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
+        ) {
             ForEach(viewModel.allUsers) { user in
                 HStack {
-                    VStack(alignment: .leading) { Text(user.name).font(.headline); Text(user.email).font(.caption).foregroundStyle(.secondary) }
+                    VStack(alignment: .leading) {
+                        Text(user.name).font(.headline)
+                        Text(user.email).font(.caption).foregroundStyle(
+                            .secondary
+                        )
+                    }
                     Spacer()
-                    if user.role == .admin { Text("ADMIN").font(.caption.bold()).foregroundStyle(Color.gray).padding(.horizontal, 12).padding(.vertical, 6).background(Color.gray.opacity(0.1)).clipShape(Capsule()) }
-                    else { Button(action: { userToManage = user }) { Text(user.isActive ? "Suspend" : "Unsuspend").font(.caption.bold()).foregroundStyle(.white).padding(.horizontal, 12).padding(.vertical, 6).background(user.isActive ? Color.btnNegative : Color.btnPositive).clipShape(Capsule()) } }
+                    if user.role == .admin {
+                        Text("ADMIN").font(.caption.bold()).foregroundStyle(
+                            Color.gray
+                        ).padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(Color.gray.opacity(0.1)).clipShape(
+                                Capsule()
+                            )
+                    } else {
+                        Button(action: { userToManage = user }) {
+                            Text(user.isActive ? "Suspend" : "Unsuspend").font(
+                                .caption.bold()
+                            ).foregroundStyle(.white).padding(.horizontal, 12)
+                                .padding(.vertical, 6).background(
+                                    user.isActive
+                                        ? Color.btnNegative : Color.btnPositive
+                                ).clipShape(Capsule())
+                        }
+                    }
                 }
-                .padding(16).background(Color.white).clipShape(RoundedRectangle(cornerRadius: 12)).padding(.horizontal, 20)
+                .padding(16).background(Color.white).clipShape(
+                    RoundedRectangle(cornerRadius: 12)
+                ).padding(.horizontal, 20)
             }
         }
         Divider().padding(.vertical, 16)
-        Section(header: Text("Public Notes Moderation").font(.subheadline.bold()).foregroundStyle(.red).padding(.horizontal, 24).frame(maxWidth: .infinity, alignment: .leading)) {
+        Section(
+            header: Text("Public Notes Moderation").font(.subheadline.bold())
+                .foregroundStyle(.red).padding(.horizontal, 24).frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
+        ) {
             ForEach(viewModel.publicNotes) { note in
                 HStack {
-                    VStack(alignment: .leading) { Text(note.motionTitle).font(.headline).lineLimit(1); Text("ID: \(note.id)").font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+                    VStack(alignment: .leading) {
+                        Text(note.motionTitle).font(.headline).lineLimit(1)
+                        Text("ID: \(note.id)").font(.caption).foregroundStyle(
+                            .secondary
+                        ).lineLimit(1)
+                    }
                     Spacer()
-                    Button(action: { viewModel.deletePublicNote(noteId: note.id) }) { Image(systemName: "trash.fill").foregroundStyle(Color.btnNegative) }
+                    Button(action: {
+                        viewModel.deletePublicNote(noteId: note.id)
+                    }) {
+                        Image(systemName: "trash.fill").foregroundStyle(
+                            Color.btnNegative
+                        )
+                    }
                 }
-                .padding(16).background(Color.white).clipShape(RoundedRectangle(cornerRadius: 12)).padding(.horizontal, 20)
+                .padding(16).background(Color.white).clipShape(
+                    RoundedRectangle(cornerRadius: 12)
+                ).padding(.horizontal, 20)
             }
         }
     }
