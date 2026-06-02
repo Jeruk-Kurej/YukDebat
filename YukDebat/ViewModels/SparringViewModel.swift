@@ -325,4 +325,33 @@ class SparringViewModel: ObservableObject {
             }
         }
     }
+
+    // Fungsi ini untuk membersihkan ruangan yang sudah selesai/batal
+    func cleanupOldRooms() {
+        let db = Firestore.firestore()
+
+        // Cari ruangan yang statusnya sudah selesai atau batal
+        db.collection("sparring_rooms")
+            .whereField("state", in: ["CANCELLED", "DONE"])
+            .getDocuments { snapshot, error in
+                guard let docs = snapshot?.documents, error == nil else {
+                    return
+                }
+
+                for doc in docs {
+                    // Untuk keamanan, kita hapus langsung.
+                    // Jika ingin memberi jeda 30 menit (asumsi state diubah saat selesai),
+                    // kita bisa menambahkan field 'finishedAt' di masa depan.
+                    doc.reference.delete { error in
+                        if let error = error {
+                            print(
+                                "Gagal menghapus room: \(error.localizedDescription)"
+                            )
+                        } else {
+                            print("Room berhasil dibersihkan dari database.")
+                        }
+                    }
+                }
+            }
+    }
 }

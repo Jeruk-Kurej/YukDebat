@@ -7,59 +7,45 @@
 
 import SwiftUI
 
-/// A card component displaying a pending competition awaiting admin review.
 struct AdminPendingCard: View {
-
-    // MARK: - Properties
-
     let comp: CompetitionModel
     let onAction: (AdminAction) -> Void
 
-    // MARK: - Body
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header: User Info
-            HStack(spacing: 10) {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.title)
-                    .foregroundStyle(Color.accentWalnut)
+            // Poster Gambar
+            RemoteImageView(source: comp.posterStorageUrl)
+                .frame(height: 160)
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .background(Color.gray.opacity(0.1))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Submitted by")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    Text(comp.promoterEmail ?? "User")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(Color.textCharcoal)
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-
-            // IMAGE SECTION: Gunakan RemoteImageView 1 baris saja!
-            // Komponen ini otomatis menangani HTTP (Cloudinary) atau Base64 (Lama).
-            if !comp.posterStorageUrl.isEmpty {
-                RemoteImageView(source: comp.posterStorageUrl)
-                    .frame(height: 180)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-            }
-
-            // Description
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
+                // Info Judul & Promoter
                 Text(comp.name)
-                    .font(.title3.bold())
+                    .font(.headline)
                     .foregroundStyle(Color.textCharcoal)
-                Text(comp.description)
-                    .font(.subheadline)
+                    .lineLimit(1)
+
+                Text("By: \(comp.promoterEmail ?? "Unknown")")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(3)
+
+                // Tanggal Kompetisi
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                    Text(comp.eventDate.formatted(date: .long, time: .omitted))
+                }
+                .font(.caption.bold())
+                .foregroundStyle(Color.accentWalnut)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 8)
+                .background(Color.accentWalnut.opacity(0.1))
+                .clipShape(Capsule())
             }
             .padding(.horizontal, 16)
 
-            // Actions
+            // Aksi Buttons
             HStack(spacing: 12) {
                 Button(action: { onAction(.reject) }) {
                     Text("Reject")
@@ -70,6 +56,7 @@ struct AdminPendingCard: View {
                         .foregroundStyle(Color.btnNegative)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
+
                 Button(action: { onAction(.approve) }) {
                     Text("Approve")
                         .font(.subheadline.bold())
@@ -80,8 +67,7 @@ struct AdminPendingCard: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(16)
         }
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -91,7 +77,6 @@ struct AdminPendingCard: View {
                 lineWidth: 1
             )
         )
-        .shadow(color: Color.black.opacity(0.04), radius: 10, y: 5)
         .padding(.horizontal, 20)
     }
 }

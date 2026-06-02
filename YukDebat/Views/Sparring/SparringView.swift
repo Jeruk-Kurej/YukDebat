@@ -63,9 +63,9 @@ struct SparringView: View {
             }
             .navigationTitle("Sparring Lobby")
             .onAppear {
-                // PANGGIL LISTENER FIRESTORE DI SINI
                 viewModel.fetchLobbyRooms()
                 viewModel.checkAndCancelExpiredRooms()
+                viewModel.cleanupOldRooms()
             }
             .onReceive(timer) { _ in
                 withAnimation {
