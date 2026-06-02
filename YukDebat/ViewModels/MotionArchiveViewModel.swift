@@ -31,12 +31,19 @@ class MotionArchiveViewModel: ObservableObject {
     private let apiProxy: CloudFunctionsProtocol
     private let localCache: CoreDataStorageProtocol
     private let db = Firestore.firestore()
+    
+    private var myNotesListener: ListenerRegistration?
+    private var communityNotesListener: ListenerRegistration?
 
-    init(apiProxy: CloudFunctionsProtocol, localCache: CoreDataStorageProtocol)
-    {
+    init(apiProxy: CloudFunctionsProtocol, localCache: CoreDataStorageProtocol) {
         self.apiProxy = apiProxy
         self.localCache = localCache
         loadDefaultMotions()
+    }
+    
+    deinit {
+        myNotesListener?.remove()
+        communityNotesListener?.remove()
     }
 
     func triggerFetchMotion() {
@@ -117,7 +124,7 @@ class MotionArchiveViewModel: ObservableObject {
             "ownerId": noteToSave.ownerId,
             "motionTitle": noteToSave.motionTitle,
             "argumentsRichText": noteToSave.argumentsRichText,
-            "visibility": noteToSave.visibility.rawValue,  // Pastikan ini menghasilkan "PUBLIC" atau "PRIVATE"
+            "visibility": noteToSave.visibility.rawValue,
             "isFeedbackRequested": noteToSave.isFeedbackRequested,
             "updatedAt": Timestamp(date: noteToSave.updatedAt),
         ]
@@ -136,37 +143,40 @@ class MotionArchiveViewModel: ObservableObject {
             "isFeedbackRequested": true
         ])
     }
+    
     func deleteNoteFromFirestore(noteId: String) {
-        db.collection("case_notes").document(noteId).delete()
+        db.collection("case_notes").document(noteId).delete { error in
+            if let error = error {
+                print("Error deleting note: \(error)")
+            }
+        }
     }
 
     func fetchMyNotes(userId: String) {
-        db.collection("case_notes").whereField("ownerId", isEqualTo: userId)
-            .addSnapshotListener { snapshot, _ in
-                guard let documents = snapshot?.documents else { return }
+        myNotesListener?.remove()
+        
+        myNotesListener = db.collection("case_notes")
+            .whereField("ownerId", isEqualTo: userId)
+            .addSnapshotListener { [weak self] snapshot, _ in
+                guard let self = self, let documents = snapshot?.documents else { return }
                 self.myNotes = self.mapDocumentsToNotes(documents)
             }
     }
 
     func fetchCommunityNotes() {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        communityNotesListener?.remove()
 
-        // Pastikan query konsisten dengan data yang disimpan
-        db.collection("case_notes")
+        communityNotesListener = db.collection("case_notes")
             .whereField("visibility", isEqualTo: "PUBLIC")
-            .addSnapshotListener { snapshot, _ in
-                guard let documents = snapshot?.documents else { return }
+            .addSnapshotListener { [weak self] snapshot, _ in
+                guard let self = self, let documents = snapshot?.documents else { return }
                 let allPublic = self.mapDocumentsToNotes(documents)
-                // Saring agar user tidak melihat note miliknya sendiri di tab community
-                self.communityNotes = allPublic.filter {
-                    $0.ownerId != currentUserId
-                }
+                
+                self.communityNotes = allPublic
             }
     }
 
-    private func mapDocumentsToNotes(_ documents: [QueryDocumentSnapshot])
-        -> [CaseBuildingNoteModel]
-    {
+    private func mapDocumentsToNotes(_ documents: [QueryDocumentSnapshot]) -> [CaseBuildingNoteModel] {
         let notes = documents.compactMap { doc -> CaseBuildingNoteModel? in
             let data = doc.data()
             let visibilityStr = data["visibility"] as? String ?? "PRIVATE"
@@ -175,13 +185,9 @@ class MotionArchiveViewModel: ObservableObject {
                 ownerId: data["ownerId"] as? String ?? "",
                 motionTitle: data["motionTitle"] as? String ?? "",
                 argumentsRichText: data["argumentsRichText"] as? String ?? "",
-                visibility: (visibilityStr == "PUBLIC"
-                    || visibilityStr == "public")
-                    ? .publicAccess : .privateAccess,
-                isFeedbackRequested: data["isFeedbackRequested"] as? Bool
-                    ?? false,
-                updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue()
-                    ?? Date(),
+                visibility: (visibilityStr == "PUBLIC" || visibilityStr == "public") ? .publicAccess : .privateAccess,
+                isFeedbackRequested: data["isFeedbackRequested"] as? Bool ?? false,
+                updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date(),
                 feedbackText: data["feedbackText"] as? String,
                 feedbackProviderName: data["feedbackProviderName"] as? String
             )
@@ -191,30 +197,10 @@ class MotionArchiveViewModel: ObservableObject {
 
     private func loadDefaultMotions() {
         motionsList = [
-            MotionModel(
-                id: "m1",
-                title:
-                    "Melarang penggunaan kecerdasan buatan (AI) di seluruh institusi pendidikan formal.",
-                isWishlisted: false
-            ),
-            MotionModel(
-                id: "m2",
-                title:
-                    "Menyesali glorifikasi budaya kerja berlebihan (hustle culture) di kalangan generasi muda.",
-                isWishlisted: false
-            ),
-            MotionModel(
-                id: "m3",
-                title:
-                    "Mendukung penerapan sistem empat hari kerja dalam seminggu secara nasional.",
-                isWishlisted: false
-            ),
-            MotionModel(
-                id: "m4",
-                title:
-                    "Menurunkan batas usia minimum hak pilih dalam pemilihan umum menjadi 16 tahun.",
-                isWishlisted: false
-            ),
+            MotionModel(id: "m1", title: "Melarang penggunaan kecerdasan buatan (AI) di seluruh institusi pendidikan formal.", isWishlisted: false),
+            MotionModel(id: "m2", title: "Menyesali glorifikasi budaya kerja berlebihan (hustle culture) di kalangan generasi muda.", isWishlisted: false),
+            MotionModel(id: "m3", title: "Mendukung penerapan sistem empat hari kerja dalam seminggu secara nasional.", isWishlisted: false),
+            MotionModel(id: "m4", title: "Menurunkan batas usia minimum hak pilih dalam pemilihan umum menjadi 16 tahun.", isWishlisted: false)
         ]
     }
 }
