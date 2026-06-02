@@ -6,49 +6,111 @@
 //
 
 import Combine
+import FirebaseAuth
+import FirebaseFirestore
 import Foundation
 
-/// Coordinates the real-time sparring lobby state and matchmaking intents.
 class SparringViewModel: ObservableObject {
 
-    // MARK: - Published Properties (UI State)
+    // MARK: - Published Properties
     @Published var lobbyRooms: [SparringRoomModel] = []
     @Published var alertMessage: String? = nil
     @Published var errorMessage: String? = nil
     @Published var isShowingCreateRoom: Bool = false
 
-    // MARK: - Published Properties (Form Data)
-    @Published var formMotionTitle: String = ""  // PENGGANTI KATEGORI
+    @Published var formMotionTitle: String = ""
     @Published var formScheduledTime: Date = Date().addingTimeInterval(3600)
     @Published var formMeetingLink: String = ""
     @Published var formSpecialNotes: String = ""
     @Published var formIsPrivate: Bool = false
+
+    // Antrean Request sekarang Real-time dari Firestore!
     @Published var pendingRequests: [String: [ParticipantModel]] = [:]
 
-    // MARK: - Private Properties
-    private let currentUserId = "user_me"
     private let dbService: FirestoreServiceProtocol
+    private let db = Firestore.firestore()
+
+    var currentUserId: String {
+        return Auth.auth().currentUser?.uid ?? ""
+    }
 
     init(dbService: FirestoreServiceProtocol) {
         self.dbService = dbService
     }
 
-    // MARK: - Methods
-    func listenToRoom(roomId: String) {
-        let roomPublic = SparringRoomModel(
-            id: "room_public_1",
-            hostId: "user_mario_123",
-            scheduledTime: Date().addingTimeInterval(7200),
-            motionTitle:
-                "Dewan ini akan melarang penggunaan AI sebagai instrumen kelulusan",
-            specialNotes: "Latihan BP standar NUDC.",
-            meetingLink: "https://zoom.us/j/dummy",
-            accessType: .publicAccess,
-            state: .preparing,
-            participants: [],
-            isAdjudicatorNeeded: true
-        )
-        self.lobbyRooms = [roomPublic]
+    func listenToRoom(roomId: String) { fetchLobbyRooms() }
+
+    func fetchLobbyRooms() {
+        db.collection("sparring_rooms")
+            .order(by: "scheduledTime", descending: false)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self = self, let docs = snapshot?.documents else {
+                    return
+                }
+
+                var tempPending: [String: [ParticipantModel]] = [:]
+
+                self.lobbyRooms = docs.compactMap { doc in
+                    let data = doc.data()
+
+                    // Parse Peserta yang sudah JOIN
+                    let participantsData =
+                        data["participants"] as? [[String: Any]] ?? []
+                    let participantsList = participantsData.compactMap {
+                        pData -> ParticipantModel? in
+                        guard let uid = pData["userId"] as? String,
+                            let roleStr = pData["roleSlot"] as? String,
+                            let role = RoleSlotType(rawValue: roleStr),
+                            let regStr = pData["regMode"] as? String,
+                            let reg = RegMode(rawValue: regStr)
+                        else { return nil }
+                        return ParticipantModel(
+                            userId: uid,
+                            roleSlot: role,
+                            regMode: reg
+                        )
+                    }
+
+                    // Parse Antrean PENDING REQUEST
+                    let pendingData =
+                        data["pendingRequests"] as? [[String: Any]] ?? []
+                    let pendingList = pendingData.compactMap {
+                        pData -> ParticipantModel? in
+                        guard let uid = pData["userId"] as? String,
+                            let roleStr = pData["roleSlot"] as? String,
+                            let role = RoleSlotType(rawValue: roleStr),
+                            let regStr = pData["regMode"] as? String,
+                            let reg = RegMode(rawValue: regStr)
+                        else { return nil }
+                        return ParticipantModel(
+                            userId: uid,
+                            roleSlot: role,
+                            regMode: reg
+                        )
+                    }
+                    tempPending[doc.documentID] = pendingList
+
+                    return SparringRoomModel(
+                        id: doc.documentID,
+                        hostId: data["hostId"] as? String ?? "",
+                        scheduledTime: (data["scheduledTime"] as? Timestamp)?
+                            .dateValue() ?? Date(),
+                        motionTitle: data["motionTitle"] as? String ?? "",
+                        specialNotes: data["specialNotes"] as? String ?? "",
+                        meetingLink: data["meetingLink"] as? String ?? "",
+                        accessType: VisibilityType(
+                            rawValue: data["accessType"] as? String ?? "PUBLIC"
+                        ) ?? .publicAccess,
+                        state: RoomState(
+                            rawValue: data["state"] as? String ?? "PREPARING"
+                        ) ?? .preparing,
+                        participants: participantsList,
+                        isAdjudicatorNeeded: data["isAdjudicatorNeeded"]
+                            as? Bool ?? true
+                    )
+                }
+                self.pendingRequests = tempPending
+            }
     }
 
     func isUserInRoom(room: SparringRoomModel) -> Bool {
@@ -66,153 +128,200 @@ class SparringViewModel: ObservableObject {
     }
 
     func submitRoomForm() {
-        // 1. RESET STATE ERROR SEBELUM MULAI
         self.errorMessage = nil
         self.alertMessage = nil
-
         guard !formMeetingLink.isEmpty else {
             self.errorMessage = "Meeting Link tidak boleh kosong."
             return
         }
-
-        // 2. KASIH TOLERANSI WAKTU 2 MENIT
-        // Jadi kalau kamu ngisi formnya kelamaan, sistem tetap maklum dan gak nembak error
         guard formScheduledTime >= Date().addingTimeInterval(-120) else {
             self.errorMessage = "Waktu sparring tidak boleh di masa lalu."
             return
         }
+        guard let userId = Auth.auth().currentUser?.uid else { return }
 
-        let newRoom = SparringRoomModel(
-            id: UUID().uuidString,
-            hostId: self.currentUserId,
-            scheduledTime: self.formScheduledTime,
-            motionTitle: self.formMotionTitle.isEmpty
+        let newRoomId = UUID().uuidString
+        let roomData: [String: Any] = [
+            "id": newRoomId, "hostId": userId,
+            "scheduledTime": Timestamp(date: self.formScheduledTime),
+            "motionTitle": self.formMotionTitle.isEmpty
                 ? "Topik Bebas" : self.formMotionTitle,
-            specialNotes: self.formSpecialNotes,
-            meetingLink: self.formMeetingLink,
-            accessType: self.formIsPrivate ? .privateAccess : .publicAccess,
-            state: .preparing,
-            participants: [],
-            isAdjudicatorNeeded: true
-        )
+            "specialNotes": self.formSpecialNotes,
+            "meetingLink": self.formMeetingLink,
+            "accessType": self.formIsPrivate ? "PRIVATE" : "PUBLIC",
+            "state": "PREPARING",
+            "participants": [], "pendingRequests": [],
+            "isAdjudicatorNeeded": true,  // FIX: Siapkan wadah kosong untuk pending
+        ]
 
-        self.lobbyRooms.insert(newRoom, at: 0)
-
-        // 3. TUTUP FORM & BERSIHKAN DATA UNTUK PEMBUATAN ROOM SELANJUTNYA
-        self.isShowingCreateRoom = false
-        self.formMotionTitle = ""
-        self.formMeetingLink = ""
-        self.formSpecialNotes = ""
-        self.formScheduledTime = Date()  // Reset jam ke waktu sekarang
-        self.formIsPrivate = false
-
-        self.alertMessage = "Ruang sparring berhasil dibuat!"
+        db.collection("sparring_rooms").document(newRoomId).setData(roomData) {
+            error in
+            if error == nil {
+                self.alertMessage = "Ruang sparring berhasil dibuat!"
+                self.isShowingCreateRoom = false
+                self.formMotionTitle = ""
+                self.formMeetingLink = ""
+                self.formSpecialNotes = ""
+                self.formScheduledTime = Date()
+                self.formIsPrivate = false
+            }
+        }
     }
 
-    func requestJoin(roomId: String, role: RoleSlotType, isTeam: Bool) {
-        guard let index = lobbyRooms.firstIndex(where: { $0.id == roomId })
+    // MASUK KE ROOM PUBLIC (LANGSUNG JOIN)
+    func joinRoom(room: SparringRoomModel, mode: RegMode) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        if room.participants.contains(where: { $0.userId == userId }) { return }
+
+        let newParticipant: [String: Any] = [
+            "userId": userId, "roleSlot": RoleSlotType.openingGovt.rawValue,
+            "regMode": mode.rawValue,
+        ]
+        db.collection("sparring_rooms").document(room.id).updateData([
+            "participants": FieldValue.arrayUnion([newParticipant])
+        ]) { error in
+            if error == nil { self.alertMessage = "Berhasil Join!" }
+        }
+    }
+    func removeParticipant(room: SparringRoomModel, userId: String) {
+        let updatedParticipants = room.participants
+            .filter { $0.userId != userId }
+            .map {
+                [
+                    "userId": $0.userId, "roleSlot": $0.roleSlot.rawValue,
+                    "regMode": $0.regMode.rawValue,
+                ]
+            }
+
+        db.collection("sparring_rooms").document(room.id).updateData([
+            "participants": updatedParticipants
+        ])
+    }
+
+    // KELUAR DARI ROOM PUBLIC (LEAVE)
+    func leaveRoom(roomId: String) {
+        guard let userId = Auth.auth().currentUser?.uid,
+            let index = lobbyRooms.firstIndex(where: { $0.id == roomId })
         else { return }
         let room = lobbyRooms[index]
 
-        if room.participants.count >= 8 {
-            self.errorMessage = "Ruangan sudah penuh."
-            return
+        let updatedParticipants = room.participants.filter {
+            $0.userId != userId
+        }.map {
+            [
+                "userId": $0.userId, "roleSlot": $0.roleSlot.rawValue,
+                "regMode": $0.regMode.rawValue,
+            ]
         }
-
-        let regMode: RegMode = isTeam ? .team : .solo
-        let newParticipant = ParticipantModel(
-            userId: currentUserId,
-            roleSlot: role,
-            regMode: regMode
-        )
-        let teammate = ParticipantModel(
-            userId: "rekan_tim_anda",
-            roleSlot: role,
-            regMode: regMode
-        )
-
-        if room.accessType == .privateAccess {
-            var currentPending = pendingRequests[roomId] ?? []
-            currentPending.append(newParticipant)
-            if isTeam { currentPending.append(teammate) }
-            pendingRequests[roomId] = currentPending
-            self.alertMessage = "Permintaan dikirim! Menunggu persetujuan."
-        } else {
-            self.lobbyRooms[index].participants.append(newParticipant)
-            if isTeam { self.lobbyRooms[index].participants.append(teammate) }
-            self.alertMessage =
-                isTeam ? "Berhasil bergabung (2 Slot)!" : "Berhasil bergabung!"
+        db.collection("sparring_rooms").document(roomId).updateData([
+            "participants": updatedParticipants
+        ]) { error in
+            if error == nil { self.alertMessage = "Kamu telah keluar." }
         }
     }
 
-    func acceptRequest(roomId: String, participantId: String) {
-        guard let roomIndex = lobbyRooms.firstIndex(where: { $0.id == roomId })
-        else { return }
-        guard let pendingList = pendingRequests[roomId] else { return }
+    // ---------------------------------------------------------
+    // MARK: FITUR PRIVATE ROOM (REQUEST - ACCEPT - CANCEL)
+    // ---------------------------------------------------------
 
-        let matchedRequests = pendingList.filter {
-            $0.userId == participantId || $0.userId == "rekan_tim_anda"
-        }
-        for participant in matchedRequests {
-            lobbyRooms[roomIndex].participants.append(participant)
-        }
-        pendingRequests[roomId]?.removeAll(where: {
-            $0.userId == participantId || $0.userId == "rekan_tim_anda"
-        })
-    }
+    // MENGIRIM REQUEST (PRIVATE ROOM)
+    func requestJoin(roomId: String, role: RoleSlotType, isTeam: Bool) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        let mode: RegMode = isTeam ? .team : .solo
+        let newRequest: [String: Any] = [
+            "userId": userId, "roleSlot": role.rawValue,
+            "regMode": mode.rawValue,
+        ]
 
-    func rejectRequest(roomId: String, participantId: String) {
-        pendingRequests[roomId]?.removeAll(where: {
-            $0.userId == participantId || $0.userId == "rekan_tim_anda"
-        })
-    }
-
-    /// AKTIFASI FITUR LEAVE ROOM (Perbaikan Revisi)
-    func leaveRoom(roomId: String) {
-        guard let index = lobbyRooms.firstIndex(where: { $0.id == roomId })
-        else { return }
-        self.lobbyRooms[index].participants.removeAll(where: {
-            $0.userId == self.currentUserId || $0.userId == "rekan_tim_anda"
-        })
-        self.alertMessage = "Kamu telah keluar dari ruang sparring."
-    }
-
-    func triggerStart(roomId: String) {
-        guard let index = lobbyRooms.firstIndex(where: { $0.id == roomId })
-        else { return }
-        self.lobbyRooms[index].state = .ongoing
-    }
-
-    func validateAndFilterSessions() {
-        let now = Date()
-        // 1. Cancel otomatis yang sudah lewat waktu (Auto-Cancel)
-        for i in 0..<lobbyRooms.count {
-            if lobbyRooms[i].scheduledTime < now
-                && lobbyRooms[i].state == .preparing
-            {
-                lobbyRooms[i].state = .cancelled
+        db.collection("sparring_rooms").document(roomId).updateData([
+            "pendingRequests": FieldValue.arrayUnion([newRequest])
+        ]) { error in
+            if error == nil {
+                self.alertMessage =
+                    "Permintaan dikirim! Menunggu persetujuan Host."
             }
         }
-        // 2. Filter agar room yang sudah lampau tidak bisa dibuat (Pencegahan)
-        // Logika ini dipasang di submitRoomForm:
-        // guard formScheduledTime > Date() else { /* Tampilkan error */ }
+    }
+
+    // MEMBATALKAN REQUEST SENDIRI SEBELUM DI-ACCEPT
+    func cancelRequest(roomId: String) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        let pendingList = pendingRequests[roomId] ?? []
+        let updatedPending = pendingList.filter { $0.userId != userId }.map {
+            [
+                "userId": $0.userId, "roleSlot": $0.roleSlot.rawValue,
+                "regMode": $0.regMode.rawValue,
+            ]
+        }
+
+        db.collection("sparring_rooms").document(roomId).updateData([
+            "pendingRequests": updatedPending
+        ]) { error in
+            if error == nil {
+                self.alertMessage = "Permintaan join dibatalkan."
+            }
+        }
+    }
+
+    // HOST MENERIMA REQUEST
+    func acceptRequest(roomId: String, participantId: String) {
+        guard let pendingList = pendingRequests[roomId],
+            let acceptedUser = pendingList.first(where: {
+                $0.userId == participantId
+            })
+        else { return }
+        let participantDict = [
+            "userId": acceptedUser.userId,
+            "roleSlot": acceptedUser.roleSlot.rawValue,
+            "regMode": acceptedUser.regMode.rawValue,
+        ]
+        let updatedPending = pendingList.filter { $0.userId != participantId }
+            .map {
+                [
+                    "userId": $0.userId, "roleSlot": $0.roleSlot.rawValue,
+                    "regMode": $0.regMode.rawValue,
+                ]
+            }
+
+        db.collection("sparring_rooms").document(roomId).updateData([
+            "participants": FieldValue.arrayUnion([participantDict]),
+            "pendingRequests": updatedPending,
+        ])
+    }
+
+    // HOST MENOLAK REQUEST
+    func rejectRequest(roomId: String, participantId: String) {
+        guard let pendingList = pendingRequests[roomId] else { return }
+        let updatedPending = pendingList.filter { $0.userId != participantId }
+            .map {
+                [
+                    "userId": $0.userId, "roleSlot": $0.roleSlot.rawValue,
+                    "regMode": $0.regMode.rawValue,
+                ]
+            }
+
+        db.collection("sparring_rooms").document(roomId).updateData([
+            "pendingRequests": updatedPending
+        ])
+    }
+
+    // ---------------------------------------------------------
+
+    func triggerStart(roomId: String) {
+        db.collection("sparring_rooms").document(roomId).updateData([
+            "state": "ONGOING"
+        ])
     }
 
     func checkAndCancelExpiredRooms() {
         let now = Date()
-
-        for i in 0..<lobbyRooms.count {
-            // Jika waktu sudah lewat (atau pas) dan status masih PREPARING
-            if lobbyRooms[i].scheduledTime <= now
-                && lobbyRooms[i].state == .preparing
-            {
-                if lobbyRooms[i].participants.isEmpty {
-                    // Tidak ada orang = Batal otomatis
-                    lobbyRooms[i].state = .cancelled
-                } else {
-                    // Ada orang = Mulai otomatis
-                    lobbyRooms[i].state = .ongoing
-                }
+        for room in lobbyRooms {
+            if room.scheduledTime <= now && room.state == .preparing {
+                let newState =
+                    room.participants.isEmpty ? "CANCELLED" : "ONGOING"
+                db.collection("sparring_rooms").document(room.id).updateData([
+                    "state": newState
+                ])
             }
         }
     }
