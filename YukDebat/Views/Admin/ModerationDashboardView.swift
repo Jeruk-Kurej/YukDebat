@@ -114,12 +114,11 @@ struct ModerationDashboardView: View {
                     .foregroundStyle(.secondary).padding(.horizontal, 24)
             } else {
                 ForEach(viewModel.pendingAdjudicators) { req in
-                    AdminAdjudicatorRow(req: req) {
-                        viewModel.approveAdjudicator(
-                            reqId: req.id,
-                            userId: req.userId
-                        )
-                    }
+                    AdminAdjudicatorRow(
+                        req: req,
+                        onApprove: { viewModel.approveAdjudicator(reqId: req.id, userId: req.userId) },
+                        onReject: { viewModel.rejectAdjudicator(reqId: req.id) }
+                    )
                 }
             }
         }
