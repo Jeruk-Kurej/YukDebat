@@ -158,4 +158,10 @@ class ModerationDashboardViewModel: ObservableObject {
             "isActive": isActive
         ])
     }
+    
+    func rejectAdjudicator(reqId: String) {
+        db.collection("adjudicator_requests").document(reqId).updateData([
+            "status": "REJECTED"
+        ])
+    }
 }
