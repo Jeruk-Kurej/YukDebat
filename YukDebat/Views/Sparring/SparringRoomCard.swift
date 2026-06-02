@@ -14,134 +14,235 @@ struct SparringRoomCard: View {
     @State private var showManageSheet = false
     @State private var showJoinOptions = false
     @State private var showLeaveAlert = false
+    @State private var showCancelAlert = false  // FIX: Tambahan state untuk Cancel Request
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             headerSection
-            contentSection
+            bodySection
+
             Divider()
+                .padding(.vertical, 2)
+
             footerSection
         }
-        .padding(16).background(Color.white).clipShape(
-            RoundedRectangle(cornerRadius: 16)
-        )
+        .padding(16)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 16).stroke(
-                Color.black.opacity(0.05),
+                Color.black.opacity(0.04),
                 lineWidth: 1
             )
         )
-        .shadow(color: Color.black.opacity(0.04), radius: 10, y: 5)
-        .sheet(isPresented: $showManageSheet) {
-            ManageSparringRoomView(room: room, viewModel: viewModel)
-        }
+        .shadow(color: Color.black.opacity(0.04), radius: 8, y: 4)
+
+        // 1. Dialog Join
         .confirmationDialog(
-            "Join Sparring Room",
-            isPresented: $showJoinOptions,
-            titleVisibility: .visible
+            room.accessType == .privateAccess
+                ? "Request to Join" : "Join Sparring",
+            isPresented: $showJoinOptions
         ) {
-            Button("Join as Solo") {
-                viewModel.requestJoin(
-                    roomId: room.id,
-                    role: .openingGovt,
-                    isTeam: false
-                )
+            Button("Solo") {
+                if room.accessType == .privateAccess {
+                    viewModel.requestJoin(
+                        roomId: room.id,
+                        role: .openingGovt,
+                        isTeam: false
+                    )
+                } else {
+                    viewModel.joinRoom(room: room, mode: .solo)
+                }
             }
-            Button("Join as Team (2 Persons)") {
-                viewModel.requestJoin(
-                    roomId: room.id,
-                    role: .openingGovt,
-                    isTeam: true
-                )
+            Button("Team") {
+                if room.accessType == .privateAccess {
+                    viewModel.requestJoin(
+                        roomId: room.id,
+                        role: .openingGovt,
+                        isTeam: true
+                    )
+                } else {
+                    viewModel.joinRoom(room: room, mode: .team)
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("How would you like to register for this session?")
+            Text(
+                room.accessType == .privateAccess
+                    ? "Choose registration mode to send a request."
+                    : "Choose your registration mode to join this room."
+            )
         }
+
+        // 2. Alert Leave Room
         .alert("Leave Room", isPresented: $showLeaveAlert) {
-            Button("Cancel", role: .cancel) {}
             Button("Leave", role: .destructive) {
                 viewModel.leaveRoom(roomId: room.id)
             }
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Are you sure you want to leave this sparring session?")
+            Text("Are you sure you want to leave this sparring room?")
         }
-        .padding(.horizontal, 20)
+
+        // 3. Alert Cancel Request (FIX)
+        .alert("Cancel Request", isPresented: $showCancelAlert) {
+            Button("Cancel Request", role: .destructive) {
+                viewModel.cancelRequest(roomId: room.id)
+            }
+            Button("Keep Waiting", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to cancel your join request?")
+        }
+
+        // 4. Sheet Manage Room
+        .sheet(isPresented: $showManageSheet) {
+            ManageSparringRoomView(room: room, viewModel: viewModel)
+        }
     }
 
-    private var contentSection: some View {
+    // MARK: - Sub-Views
+
+    private var headerSection: some View {
+        HStack {
+            // Status Badge
+            HStack(spacing: 6) {
+                Circle().fill(stateColor).frame(width: 8, height: 8)
+                Text(room.state.rawValue)
+                    .font(.caption2.bold())
+                    .foregroundStyle(Color.textCharcoal)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color.gray.opacity(0.1))
+            .clipShape(Capsule())
+
+            Spacer()
+
+            // Time Info
+            HStack(spacing: 4) {
+                Image(systemName: "calendar")
+                Text(
+                    room.scheduledTime.formatted(
+                        date: .abbreviated,
+                        time: .shortened
+                    )
+                )
+            }
+            .font(.caption.bold())
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private var bodySection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(room.motionTitle).font(.system(.headline, design: .serif))
+            Text(room.motionTitle)
+                .font(.headline)
                 .foregroundStyle(Color.textCharcoal)
-            Text(room.specialNotes).font(.subheadline).foregroundStyle(
-                .secondary
-            ).lineLimit(2)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Info Row (Room ID & Participant Count) ditata rapi secara horizontal
+            HStack(spacing: 16) {
+                HStack(spacing: 4) {
+                    Image(systemName: "number.square.fill")
+                    Text(room.id.prefix(6).uppercased())
+                }
+
+                HStack(spacing: 4) {
+                    Image(systemName: "person.2.fill")
+                    Text("\(room.participants.count)/8 Joined")
+                }
+                .foregroundStyle(
+                    room.participants.count >= 8
+                        ? Color.btnNegative : .secondary
+                )
+            }
+            .font(.caption.bold())
+            .foregroundStyle(.secondary)
+            .padding(.top, 2)
         }
     }
 
     private var footerSection: some View {
         HStack {
-            Text("\(room.participants.count)/8 Joined").font(.caption)
-                .foregroundStyle(.secondary)
+            participantBadge
             Spacer()
             actionButton
         }
     }
 
-    private var headerSection: some View {
-        HStack {
-            HStack(spacing: 6) {
-                // REVISI: Warna dot indikator disesuaikan status
-                Circle()
-                    .fill(
-                        room.state == .ongoing
-                            ? Color.red
-                            : (room.state == .cancelled
-                                ? Color.gray : Color.btnPositive)
-                    )
-                    .frame(width: 8, height: 8)
-                Text(room.state.rawValue).font(.caption2.bold())
-                    .foregroundStyle(Color.textCharcoal)
-            }
-            .padding(.horizontal, 8).padding(.vertical, 4).background(
-                Color.gray.opacity(0.1)
-            ).clipShape(Capsule())
-            Spacer()
-            Text(
-                room.scheduledTime.formatted(
-                    date: .abbreviated,
-                    time: .shortened
-                )
-            ).font(.caption).foregroundStyle(.secondary)
+    @ViewBuilder
+    private var participantBadge: some View {
+        // FIX: Deteksi jika sudah Join di dalam Room
+        if viewModel.isUserInRoom(room: room),
+            let myParticipant = room.participants.first(where: {
+                $0.userId == viewModel.currentUserId
+            })
+        {
+            badgeView(
+                text: "Joined: \(myParticipant.regMode.rawValue.capitalized)",
+                color: Color.btnPositive
+            )
         }
+        // FIX: Deteksi jika masih Pending Request (Private Room)
+        else if viewModel.isUserPending(room: room),
+            let pendingList = viewModel.pendingRequests[room.id],
+            let myPending = pendingList.first(where: {
+                $0.userId == viewModel.currentUserId
+            })
+        {
+            badgeView(
+                text: "Pending: \(myPending.regMode.rawValue.capitalized)",
+                color: .orange
+            )
+        }
+    }
+
+    private func badgeView(text: String, color: Color) -> some View {
+        Text(text)
+            .font(.caption2.bold())
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(color.opacity(0.1))
+            .foregroundStyle(color)
+            .clipShape(Capsule())
     }
 
     @ViewBuilder
     private var actionButton: some View {
-        // REVISI: Kalau sudah Cancelled atau Done, tampilkan teks pasif saja
         if room.state == .cancelled || room.state == .done {
-            Text(room.state.rawValue)
-                .font(.subheadline.bold())
-                .foregroundStyle(.gray)
+            Text(room.state.rawValue).font(.subheadline.bold()).foregroundStyle(
+                .gray
+            )
         } else if viewModel.isUserHost(room: room) {
-            Button("Manage") { showManageSheet = true }.font(
-                .subheadline.bold()
-            ).foregroundStyle(.white)
+            Button("Manage") { showManageSheet = true }
+                .font(.subheadline.bold()).foregroundStyle(.white)
                 .padding(.horizontal, 16).padding(.vertical, 8).background(
                     Color.accentWalnut
                 ).clipShape(Capsule())
-        } else if viewModel.isUserInRoom(room: room) {
-            Button("Leave") { showLeaveAlert = true }.font(.subheadline.bold())
-                .foregroundStyle(Color.btnNegative)
         } else if viewModel.isUserPending(room: room) {
-            Text("Pending").font(.subheadline.bold()).foregroundStyle(.orange)
+            // Tombol Cancel Request sekarang mentrigger Alert
+            Button("Cancel Request") { showCancelAlert = true }
+                .font(.subheadline.bold()).foregroundStyle(Color.btnNegative)
+        } else if viewModel.isUserInRoom(room: room) {
+            Button("Leave") { showLeaveAlert = true }
+                .font(.subheadline.bold()).foregroundStyle(Color.btnNegative)
         } else {
             Button(room.accessType == .privateAccess ? "Request" : "Join") {
                 showJoinOptions = true
-            }.font(.subheadline.bold()).foregroundStyle(.white)
-                .padding(.horizontal, 16).padding(.vertical, 8).background(
-                    Color.btnPositive
-                ).clipShape(Capsule())
+            }
+            .font(.subheadline.bold()).foregroundStyle(.white)
+            .padding(.horizontal, 16).padding(.vertical, 8).background(
+                Color.btnPositive
+            ).clipShape(Capsule())
+        }
+    }
+
+    private var stateColor: Color {
+        switch room.state {
+        case .ongoing: return .red
+        case .cancelled: return .gray
+        default: return Color.btnPositive
         }
     }
 }

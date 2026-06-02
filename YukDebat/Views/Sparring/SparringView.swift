@@ -8,24 +8,14 @@
 import Combine
 import SwiftUI
 
-/// Renders the Sparring Lobby UI (UC02).
-/// Displays dynamic match options and clean contextual separation for accessibility states.
 struct SparringView: View {
 
-    // MARK: - Properties
-
     @ObservedObject var viewModel: SparringViewModel
-
-    // TAHAP 1: Deklarasi Timer yang berdetak setiap 5 detik
     let timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
-
-    // MARK: - Initialization
 
     init(viewModel: SparringViewModel) {
         self.viewModel = viewModel
     }
-
-    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -44,16 +34,16 @@ struct SparringView: View {
                                 .padding(.top, 60)
                         }
 
+                        // DUPLIKAT DIHAPUS. Cukup 1 ForEach saja.
                         ForEach(viewModel.lobbyRooms) { room in
                             SparringRoomCard(room: room, viewModel: viewModel)
                         }
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 16)
                     .padding(.top, 16)
                     .padding(.bottom, 120)
                 }
 
-                // Floating Action Button
                 Button(action: { viewModel.isShowingCreateRoom = true }) {
                     Image(systemName: "plus")
                         .font(.title2.bold())
@@ -73,10 +63,10 @@ struct SparringView: View {
             }
             .navigationTitle("Sparring Lobby")
             .onAppear {
-                viewModel.listenToRoom(roomId: "dummy_id")
-                viewModel.checkAndCancelExpiredRooms()  // Cek saat pertama buka
+                // PANGGIL LISTENER FIRESTORE DI SINI
+                viewModel.fetchLobbyRooms()
+                viewModel.checkAndCancelExpiredRooms()
             }
-            // TAHAP 2: Deteksi detak timer untuk update UI secara real-time
             .onReceive(timer) { _ in
                 withAnimation {
                     viewModel.checkAndCancelExpiredRooms()

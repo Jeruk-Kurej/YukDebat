@@ -18,13 +18,10 @@ class ModerationDashboardViewModel: ObservableObject {
     @Published var allUsers: [UserModel] = []
     @Published var publicNotes: [CaseBuildingNoteModel] = []
 
-    // MARK: - Private Properties
-
     private let db = Firestore.firestore()
 
-    // MARK: - Methods
-
     func fetchAllModeration() {
+        // Fetch Competitions
         db.collection("competitions").addSnapshotListener { snapshot, _ in
             guard let docs = snapshot?.documents else { return }
             var tempPending: [CompetitionModel] = []
@@ -54,7 +51,8 @@ class ModerationDashboardViewModel: ObservableObject {
             self.pendingList = tempPending
             self.approvedList = tempApproved
         }
-        
+
+        // Fetch Adjudicator Requests
         db.collection("adjudicator_requests").addSnapshotListener {
             snapshot,
             _ in
@@ -84,7 +82,8 @@ class ModerationDashboardViewModel: ObservableObject {
             self.pendingAdjudicators = tempPendingAdj
             self.approvedAdjudicators = tempApprovedAdj
         }
-        
+
+        // Fetch Users
         db.collection("users").addSnapshotListener { snapshot, _ in
             guard let docs = snapshot?.documents else { return }
             self.allUsers = docs.compactMap { doc in
@@ -103,6 +102,7 @@ class ModerationDashboardViewModel: ObservableObject {
             }
         }
 
+        // Fetch Public Notes
         db.collection("case_notes").whereField(
             "visibility",
             isEqualTo: "PUBLIC"
@@ -129,8 +129,6 @@ class ModerationDashboardViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Modification Methods
-
     func updateStatus(compId: String, to status: String) {
         db.collection("competitions").document(compId).updateData([
             "status": status
@@ -154,12 +152,8 @@ class ModerationDashboardViewModel: ObservableObject {
         batch.commit { _ in }
     }
 
-    /// Toggles the suspension state of a user. Includes a security check to prevent Admin suspension.
     func suspendUser(user: UserModel, isActive: Bool) {
-        guard user.role != .admin else {
-            print("Action Denied: Administrator accounts cannot be suspended.")
-            return
-        }
+        guard user.role != .admin else { return }
         db.collection("users").document(user.id).updateData([
             "isActive": isActive
         ])
