@@ -8,29 +8,26 @@
 import PhotosUI
 import SwiftUI
 
-/// Provides a form for Debaters to submit their credentials to upgrade to an Adjudicator role.
 struct ApplyAdjudicatorFormView: View {
-
-    // MARK: - Properties
-
     @ObservedObject var viewModel: AdjudicatorRequestViewModel
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authVM: AuthViewModel
 
     @State private var selectedItem: PhotosPickerItem? = nil
 
-    // MARK: - Body
+    // Semua field di form apply juri bersifat WAJIB (*)
+    private var isFormInvalid: Bool {
+        viewModel.experience.isEmpty || viewModel.selectedImageData == nil
+    }
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.bgCream.ignoresSafeArea()
-
                 Form {
                     Section(
-                        header: Text("Certificate / Proof of Competence").font(
-                            .caption.bold()
-                        )
+                        header: Text("Certificate / Proof of Competence *")
+                            .font(.caption.bold())
                     ) {
                         HStack {
                             Spacer()
@@ -41,10 +38,8 @@ struct ApplyAdjudicatorFormView: View {
                                 if let imageData = viewModel.selectedImageData,
                                     let uiImage = UIImage(data: imageData)
                                 {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(height: 200)
+                                    Image(uiImage: uiImage).resizable()
+                                        .scaledToFill().frame(height: 200)
                                         .clipShape(
                                             RoundedRectangle(cornerRadius: 12)
                                         )
@@ -52,12 +47,13 @@ struct ApplyAdjudicatorFormView: View {
                                     VStack(spacing: 12) {
                                         Image(systemName: "doc.badge.plus")
                                             .font(.system(size: 40))
-                                        Text("Upload Certificate")
-                                            .font(.headline)
+                                        Text("Upload Certificate *").font(
+                                            .headline
+                                        )
                                     }
-                                    .foregroundStyle(Color.accentWalnut)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 150)
+                                    .foregroundStyle(Color.accentWalnut).frame(
+                                        maxWidth: .infinity
+                                    ).frame(height: 150)
                                     .background(Color.accentWalnut.opacity(0.1))
                                     .clipShape(
                                         RoundedRectangle(cornerRadius: 12)
@@ -90,12 +86,12 @@ struct ApplyAdjudicatorFormView: View {
                     .listRowBackground(Color.white)
 
                     Section(
-                        header: Text("Debate / Adjudicating Experience").font(
+                        header: Text("Debate / Adjudicating Experience *").font(
                             .caption.bold()
                         )
                     ) {
                         TextField(
-                            "Describe your experience...",
+                            "Describe your experience *...",
                             text: $viewModel.experience,
                             axis: .vertical
                         )
@@ -109,10 +105,9 @@ struct ApplyAdjudicatorFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundStyle(Color.btnNegative)
+                    Button("Cancel") { dismiss() }.foregroundStyle(
+                        Color.btnNegative
+                    )
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Submit") {
@@ -127,12 +122,12 @@ struct ApplyAdjudicatorFormView: View {
                         }
                     }
                     .fontWeight(.bold)
-                    .foregroundStyle(Color.btnPositive)
-                    .disabled(
-                        viewModel.experience.isEmpty
-                            || viewModel.selectedImageData == nil
-                            || viewModel.isLoading
+                    // KONSISTENSI WARNA ACTION: Ikut berubah menjadi abu-abu jika form invalid
+                    .foregroundStyle(
+                        isFormInvalid || viewModel.isLoading
+                            ? Color.gray : Color.btnPositive
                     )
+                    .disabled(isFormInvalid || viewModel.isLoading)
                 }
             }
         }

@@ -9,7 +9,6 @@ import Combine
 import FirebaseAuth
 import FirebaseFirestore
 import Foundation
-import SwiftUI
 
 /// Manages fetching random motions and synchronizing case notes.
 class MotionArchiveViewModel: ObservableObject {
@@ -19,6 +18,10 @@ class MotionArchiveViewModel: ObservableObject {
     @Published var myNotes: [CaseBuildingNoteModel] = []
     @Published var communityNotes: [CaseBuildingNoteModel] = []
     @Published var isGenerating: Bool = false
+
+    // REVISI: Properti baru untuk kontrol error toast
+    @Published var showHighDemandToast: Bool = false
+    @Published var toastMessage: String = ""
 
     var filteredMotions: [MotionModel] {
         if searchText.isEmpty { return motionsList }
@@ -46,39 +49,47 @@ class MotionArchiveViewModel: ObservableObject {
         communityNotesListener?.remove()
     }
 
-    // Tambahkan instansiasi GeminiService di bagian properties atas ViewModel kamu
-    private let geminiService = GeminiService()
-
-    // Replace fungsi ini
     func triggerFetchMotion() {
         guard !isGenerating else { return }
-        isGenerating = true
+
+        // Aktifkan skeleton loader secara real-time di UI
+        DispatchQueue.main.async {
+            self.isGenerating = true
+            self.showHighDemandToast = false
+        }
 
         Task {
             do {
-                // 1. Panggil Gemini Service
-                let generatedTitle = try await geminiService.generateMotion()
-
-                // 2. Buat Model Mosi Baru
+                let response = try await apiProxy.callExternalAPI(
+                    endpoint: "get-random-motion",
+                    parameters: [:]
+                )
                 let newMotion = MotionModel(
-                    id: UUID().uuidString,
-                    title: generatedTitle,
+                    id: response["id"] as? String ?? UUID().uuidString,
+                    title: response["title"] as? String ?? "Mosi Baru",
                     isWishlisted: false
                 )
 
-                // 3. Update UI di Main Thread
                 DispatchQueue.main.async {
-                    // Masukkan ke urutan paling atas dengan animasi
-                    withAnimation(.easeOut) {
-                        self.motionsList.insert(newMotion, at: 0)
-                    }
-                    self.isGenerating = false
+                    self.motionsList.insert(newMotion, at: 0)
+                    self.isGenerating = false  // Hapus skeleton loader setelah sukses
                 }
             } catch {
                 DispatchQueue.main.async {
-                    self.isGenerating = false
-                    print("Gemini Error: \(error.localizedDescription)")
-                    // Opsional: Kalau API gagal, bisa fallback ke mosi lokal
+                    self.isGenerating = false  // REVISI: Sesuai instruksi, hapus skeleton jika terjadi kegagalan/high demand
+
+                    // Deteksi kode error 503 atau pesan sibuk dari Google
+                    let errStr = error.localizedDescription.lowercased()
+                    if errStr.contains("503") || errStr.contains("demand")
+                        || errStr.contains("unavailable")
+                    {
+                        self.toastMessage =
+                            "Server Gemini sedang penuh (High Demand). Silakan coba lagi nanti!"
+                    } else {
+                        self.toastMessage =
+                            "Gagal memproses AI mosi. Periksa koneksi internet."
+                    }
+                    self.showHighDemandToast = true
                 }
             }
         }
