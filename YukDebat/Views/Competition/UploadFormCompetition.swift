@@ -9,92 +9,52 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
-/// Form for Promoters to submit a new competition for Admin approval.
 struct UploadFormCompetition: View {
-
-    // MARK: - Properties
-
     @ObservedObject var viewModel: CompetitionViewModel
     @Environment(\.dismiss) var dismiss
     @State private var selectedItem: PhotosPickerItem? = nil
-
-    // MARK: - Body
-
+    
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.bgCream.ignoresSafeArea()
-
                 Form {
-                    Section(
-                        header: Text("Competition Poster").font(.caption.bold())
-                    ) {
+                    Section(header: Text("Competition Poster").font(.caption.bold())) {
                         HStack {
                             Spacer()
-                            PhotosPicker(
-                                selection: $selectedItem,
-                                matching: .images
-                            ) {
+                            PhotosPicker(selection: $selectedItem, matching: .images) {
                                 if let imageData = viewModel.selectedImageData,
-                                    let uiImage = UIImage(data: imageData)
-                                {
+                                   let uiImage = UIImage(data: imageData) {
                                     Image(uiImage: uiImage).resizable()
-                                        .scaledToFill()
-                                        .frame(height: 200).clipShape(
-                                            RoundedRectangle(cornerRadius: 12)
-                                        )
+                                        .scaledToFill().frame(height: 200).clipShape(RoundedRectangle(cornerRadius: 12))
                                 } else {
                                     VStack(spacing: 12) {
-                                        Image(systemName: "photo.badge.plus")
-                                            .font(.system(size: 40))
+                                        Image(systemName: "photo.badge.plus").font(.system(size: 40))
                                         Text("Select Poster").font(.headline)
                                     }
-                                    .foregroundStyle(Color.accentWalnut).frame(
-                                        maxWidth: .infinity
-                                    ).frame(height: 150)
-                                    .background(Color.accentWalnut.opacity(0.1))
-                                    .clipShape(
-                                        RoundedRectangle(cornerRadius: 12)
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(
-                                                Color.accentWalnut,
-                                                style: StrokeStyle(
-                                                    lineWidth: 2,
-                                                    dash: [5]
-                                                )
-                                            )
-                                    )
+                                    .foregroundStyle(Color.accentWalnut).frame(maxWidth: .infinity).frame(height: 150)
+                                    .background(Color.accentWalnut.opacity(0.1)).clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.accentWalnut, style: StrokeStyle(lineWidth: 2, dash: [5])))
                                 }
                             }
                             .onChange(of: selectedItem) { newItem in
-                                Task {
-                                    if let data = try? await newItem?
-                                        .loadTransferable(type: Data.self)
-                                    {
-                                        viewModel.selectedImageData = data
-                                    }
-                                }
+                                Task { if let data = try? await newItem?.loadTransferable(type: Data.self) { viewModel.selectedImageData = data } }
                             }
                             Spacer()
                         }
                         .padding(.vertical, 8)
                     }
                     .listRowBackground(Color.white)
-
-                    Section(
-                        header: Text("Competition Details").font(
-                            .caption.bold()
-                        )
-                    ) {
+                    
+                    Section(header: Text("Competition Details").font(.caption.bold())) {
                         TextField("Competition Name", text: $viewModel.name)
-                        TextField(
-                            "Description / Registration Info",
-                            text: $viewModel.desc,
-                            axis: .vertical
-                        )
-                        .frame(minHeight: 80)
+                        DatePicker("Event Date", selection: $viewModel.eventDate, displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                        TextField("Registration Link (URL)", text: $viewModel.registrationUrl)
+                            .keyboardType(.URL)
+                            .textInputAutocapitalization(.never)
+                        TextField("Description / Registration Info", text: $viewModel.desc, axis: .vertical)
+                            .frame(minHeight: 80)
                     }
                     .listRowBackground(Color.white)
                 }
@@ -104,9 +64,7 @@ struct UploadFormCompetition: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(
-                        Color.btnNegative
-                    )
+                    Button("Cancel") { dismiss() }.foregroundStyle(Color.btnNegative)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Submit") {
@@ -115,11 +73,7 @@ struct UploadFormCompetition: View {
                     }
                     .fontWeight(.bold)
                     .foregroundStyle(Color.btnPositive)
-                    .disabled(
-                        viewModel.name.isEmpty || viewModel.desc.isEmpty
-                            || viewModel.selectedImageData == nil
-                            || viewModel.isLoading
-                    )
+                    .disabled(viewModel.name.isEmpty || viewModel.desc.isEmpty || viewModel.selectedImageData == nil || viewModel.isLoading)
                 }
             }
         }
