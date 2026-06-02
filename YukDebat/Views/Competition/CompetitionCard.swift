@@ -19,86 +19,97 @@ struct CompetitionCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if comp.posterStorageUrl.starts(with: "http") {
-                AsyncImage(url: URL(string: comp.posterStorageUrl)) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    ProgressView()
-                }
-                .frame(height: 180)
+            
+            // 1. HERO IMAGE
+            RemoteImageView(source: comp.posterStorageUrl)
                 .frame(maxWidth: .infinity)
+                .frame(height: 180)
                 .clipped()
-            } else if let imageData = Data(
-                base64Encoded: comp.posterStorageUrl,
-                options: .ignoreUnknownCharacters
-            ),
-                let uiImage = UIImage(data: imageData)
-            {
-                RemoteImageView(source: comp.posterStorageUrl)
-                    .frame(height: 160)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            } else {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 180)
-                    .frame(maxWidth: .infinity)
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(comp.name)
-                        .font(.title3.bold())
-                        .foregroundStyle(Color.textCharcoal)
-                        .lineLimit(1)
-
-                    Spacer()
-
+                .overlay(
+                    LinearGradient(
+                        colors: [.black.opacity(0.4), .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(alignment: .topTrailing) {
                     if isPending {
-                        Text("PENDING")
-                            .font(.caption2.bold())
-                            .foregroundStyle(.orange)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.orange.opacity(0.2))
-                            .clipShape(Capsule())
+                        badgeView(text: "PENDING", color: .orange)
+                            .padding(16)
+                    } else {
+                        badgeView(text: "REGISTRATION OPEN", color: Color.btnPositive)
+                            .padding(16)
                     }
                 }
 
-                Text(comp.description)
-                    .font(.subheadline)
+            // 2. CARD CONTENT
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(comp.name)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Color.textCharcoal)
+                        .lineLimit(2)
+                    
+                    Text(comp.description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+                
+                HStack(spacing: 16) {
+                    Label {
+                        Text(formatDate(comp.eventDate))
+                    } icon: {
+                        Image(systemName: "calendar")
+                    }
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                }
             }
             .padding(16)
         }
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16).stroke(
-                Color.black.opacity(0.05),
-                lineWidth: 1
-            )
-        )
-        .shadow(color: Color.black.opacity(0.04), radius: 10, y: 5)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 5)
         .padding(.horizontal, 24)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
+    }
+    
+    // MARK: - Helpers
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd MMM yyyy"
+        return formatter.string(from: date)
+    }
+    
+    @ViewBuilder
+    private func badgeView(text: String, color: Color) -> some View {
+        Text(text.uppercased())
+            .font(.caption2.bold())
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial)
+            .clipShape(Capsule())
+            .environment(\.colorScheme, .dark)
     }
 }
 
 // MARK: - Preview
 #Preview {
-    CompetitionCard(
-        comp: CompetitionModel(
-            id: "1",
-            promoterId: "user_1",
-            promoterEmail: "test@example.com",
-            name: "NUDC 2026",
-            description: "National University Debating Championship",
-            eventDate: Date(),
-            registrationUrl: "",
-            posterStorageUrl: "",
-            status: .active
-        ),
-        isPending: false
-    )
+//    CompetitionCard(
+//        comp: CompetitionModel(
+//            id: "1",
+//            promoterId: "user_1",
+//            promoterEmail: "test@example.com",
+//            name: "NUDC 2026",
+//            description: "National University Debating Championship",
+//            eventDate: Date(),
+//            registrationUrl: "",
+//            posterStorageUrl: "",
+//            status: .active
+//        ),
+//        isPending: false
+//    )
 }
