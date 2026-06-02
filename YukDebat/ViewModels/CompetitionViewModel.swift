@@ -10,8 +10,12 @@ import FirebaseAuth
 import FirebaseFirestore
 import Foundation
 
+/// Manages competition listing, submission, and status tracking for organizers.
+@MainActor
 class CompetitionViewModel: ObservableObject {
+
     // MARK: - Published Properties
+
     @Published var activeCompetitions: [CompetitionModel] = []
     @Published var myPendingCompetitions: [CompetitionModel] = []
 
@@ -21,59 +25,66 @@ class CompetitionViewModel: ObservableObject {
     @Published var registrationUrl: String = ""
     @Published var selectedImageData: Data? = nil
 
-    @Published var isLoading: Bool = false
+    @Published private(set) var isLoading: Bool = false
     @Published var statusMessage: String? = nil
 
-    var hasError: Bool { return statusMessage?.contains("Failed") ?? false }
+    var hasError: Bool {
+        return statusMessage?.contains("Failed") ?? false
+    }
+
+    // MARK: - Properties
 
     private let db = Firestore.firestore()
-    private let storageService: CloudStorageProtocol = CloudinaryService()
+    private let storageService: CloudStorageProtocol
 
+    // MARK: - Initialization
+
+    /// Initializes with required dependencies.
+    /// - Parameter storageService: Protocol implementation for cloud storage.
+    init(storageService: CloudStorageProtocol) {
+        self.storageService = storageService
+    }
+
+    // MARK: - Methods
+
+    /// Fetches all competitions and separates them into active and pending lists.
     func fetchCompetitions() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
+
         db.collection("competitions").addSnapshotListener {
             [weak self] snapshot, _ in
             guard let docs = snapshot?.documents else { return }
+
             var active: [CompetitionModel] = []
             var pending: [CompetitionModel] = []
+
             for doc in docs {
                 let data = doc.data()
-                let status =
-                    ReviewStatus(
-                        rawValue: data["status"] as? String ?? "PENDING"
-                    ) ?? .pending
-                let promoterId = data["promoterId"] as? String ?? ""
-                let model = CompetitionModel(
-                    id: doc.documentID,
-                    promoterId: promoterId,
-                    promoterEmail: data["promoterEmail"] as? String ?? "",
-                    name: data["name"] as? String ?? "",
-                    description: data["description"] as? String ?? "",
-                    eventDate: (data["eventDate"] as? Timestamp)?.dateValue()
-                        ?? Date(),
-                    registrationUrl: data["registrationUrl"] as? String ?? "",
-                    posterStorageUrl: data["posterUrl"] as? String ?? "",
-                    status: status
-                )
-                if status == .active {
+                let model = self?.mapToCompetition(doc: doc)
+
+                guard let model = model else { continue }
+
+                if model.status == .active {
                     active.append(model)
-                } else if status == .pending && promoterId == userId {
+                } else if model.status == .pending && model.promoterId == userId
+                {
                     pending.append(model)
                 }
             }
-            DispatchQueue.main.async {
-                self?.activeCompetitions = active
-                self?.myPendingCompetitions = pending
-            }
+
+            self?.activeCompetitions = active
+            self?.myPendingCompetitions = pending
         }
     }
 
+    /// Submits competition data to Firestore after uploading the poster image.
     func submitCompetitionData() {
         guard let userId = Auth.auth().currentUser?.uid,
             let userEmail = Auth.auth().currentUser?.email,
             let imageData = selectedImageData
         else { return }
 
+        // Validate date
         let calendar = Calendar.current
         if calendar.compare(eventDate, to: Date(), toGranularity: .day)
             == .orderedAscending
@@ -82,9 +93,9 @@ class CompetitionViewModel: ObservableObject {
                 "Error: Tanggal kompetisi tidak boleh di masa lalu."
             return
         }
-        // ----------------------------------
 
         isLoading = true
+
         Task {
             do {
                 let uploadedUrl = try await storageService.uploadImage(
@@ -104,30 +115,47 @@ class CompetitionViewModel: ObservableObject {
                     "status": ReviewStatus.pending.rawValue,
                 ]
 
-                db.collection("competitions").document(compId).setData(data) {
-                    [weak self] error in
-                    DispatchQueue.main.async {
-                        self?.isLoading = false
-                        if let error = error {
-                            self?.statusMessage =
-                                "Failed to submit: \(error.localizedDescription)"
-                        } else {
-                            self?.statusMessage = "Competition submitted!"
-                            self?.name = ""
-                            self?.desc = ""
-                            self?.selectedImageData = nil
-                            self?.registrationUrl = ""
-                            self?.eventDate = Date()
-                        }
-                    }
-                }
+                try await db.collection("competitions").document(compId)
+                    .setData(data)
+
+                self.statusMessage = "Competition submitted!"
+                self.clearForm()
             } catch {
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                    self.statusMessage =
-                        "Failed to submit: \(error.localizedDescription)"
-                }
+                self.statusMessage =
+                    "Failed to submit: \(error.localizedDescription)"
             }
+            self.isLoading = false
         }
+    }
+
+    // MARK: - Private Helpers
+
+    /// Clears form fields after successful submission.
+    private func clearForm() {
+        self.name = ""
+        self.desc = ""
+        self.selectedImageData = nil
+        self.registrationUrl = ""
+        self.eventDate = Date()
+    }
+
+    /// Maps Firestore document to CompetitionModel.
+    private func mapToCompetition(doc: QueryDocumentSnapshot)
+        -> CompetitionModel
+    {
+        let data = doc.data()
+        let statusRaw = data["status"] as? String ?? "PENDING"
+
+        return CompetitionModel(
+            id: doc.documentID,
+            promoterId: data["promoterId"] as? String ?? "",
+            promoterEmail: data["promoterEmail"] as? String ?? "",
+            name: data["name"] as? String ?? "",
+            description: data["description"] as? String ?? "",
+            eventDate: (data["eventDate"] as? Timestamp)?.dateValue() ?? Date(),
+            registrationUrl: data["registrationUrl"] as? String ?? "",
+            posterStorageUrl: data["posterUrl"] as? String ?? "",
+            status: ReviewStatus(rawValue: statusRaw) ?? .pending
+        )
     }
 }

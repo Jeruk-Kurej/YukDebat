@@ -5,6 +5,8 @@
 //  Created by Keane Juan Suryanto on 01/06/26.
 //
 
+// MARK: - RegMode - Enum
+
 import Foundation
 
 /// Defines whether a participant joins a sparring room individually or with a teammate.

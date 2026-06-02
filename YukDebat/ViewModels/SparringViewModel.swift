@@ -2,7 +2,7 @@
 //  SparringViewModel.swift
 //  YukDebat
 //
-//  Created by Bryan Carlie Lukito Setiawan
+//  Created by Bryan Carlie Lukito Setiawan 29/05/26
 //
 
 import Combine
@@ -10,169 +10,86 @@ import FirebaseAuth
 import FirebaseFirestore
 import Foundation
 
+/// Manages sparring room sessions, participant slots, and matching logic.
+@MainActor
 class SparringViewModel: ObservableObject {
+
     // MARK: - Published Properties
+
     @Published var lobbyRooms: [SparringRoomModel] = []
+    @Published var pendingRequests: [String: [ParticipantModel]] =
+        [:]
+
     @Published var alertMessage: String? = nil
     @Published var errorMessage: String? = nil
     @Published var isShowingCreateRoom: Bool = false
+
+    // Form Inputs
     @Published var formMotionTitle: String = ""
     @Published var formScheduledTime: Date = Date().addingTimeInterval(3600)
     @Published var formMeetingLink: String = ""
     @Published var formSpecialNotes: String = ""
-    @Published var formIsPrivate: Bool = false
-    @Published var pendingRequests: [String: [ParticipantModel]] = [:]
+    @Published var isFormPrivate: Bool = false
+
+    // MARK: - Properties
 
     private let dbService: FirestoreServiceProtocol
     private let db = Firestore.firestore()
 
     var currentUserId: String {
-        return Auth.auth().currentUser?.uid ?? ""
+        Auth.auth().currentUser?.uid ?? ""
     }
+
+    // MARK: - Initialization
 
     init(dbService: FirestoreServiceProtocol) {
         self.dbService = dbService
     }
 
-    func listenToRoom(roomId: String) { fetchLobbyRooms() }
+    // MARK: - Methods
 
-    func fetchLobbyRooms() {
+    /// Listens to real-time updates for sparring rooms.
+    func listenToRooms() {
         db.collection("sparring_rooms")
             .order(by: "scheduledTime", descending: false)
-            .addSnapshotListener { [weak self] snapshot, error in
+            .addSnapshotListener { [weak self] snapshot, _ in
                 guard let self = self, let docs = snapshot?.documents else {
                     return
                 }
-
-                var tempPending: [String: [ParticipantModel]] = [:]
-
-                self.lobbyRooms = docs.compactMap { doc in
-                    let data = doc.data()
-
-                    // Parse Peserta dengan backward compatibility (userName)
-                    let participantsData =
-                        data["participants"] as? [[String: Any]] ?? []
-                    let participantsList = participantsData.compactMap {
-                        pData -> ParticipantModel? in
-                        guard let uid = pData["userId"] as? String,
-                            let roleStr = pData["roleSlot"] as? String,
-                            let role = RoleSlotType(rawValue: roleStr),
-                            let regStr = pData["regMode"] as? String,
-                            let reg = RegMode(rawValue: regStr)
-                        else { return nil }
-                        let name = pData["userName"] as? String ?? "Unknown"
-                        return ParticipantModel(
-                            userId: uid,
-                            userName: name,
-                            roleSlot: role,
-                            regMode: reg
-                        )
-                    }
-
-                    // Parse Antrean PENDING REQUEST dengan backward compatibility
-                    let pendingData =
-                        data["pendingRequests"] as? [[String: Any]] ?? []
-                    let pendingList = pendingData.compactMap {
-                        pData -> ParticipantModel? in
-                        guard let uid = pData["userId"] as? String,
-                            let roleStr = pData["roleSlot"] as? String,
-                            let role = RoleSlotType(rawValue: roleStr),
-                            let regStr = pData["regMode"] as? String,
-                            let reg = RegMode(rawValue: regStr)
-                        else { return nil }
-                        let name = pData["userName"] as? String ?? "Unknown"
-                        return ParticipantModel(
-                            userId: uid,
-                            userName: name,
-                            roleSlot: role,
-                            regMode: reg
-                        )
-                    }
-
-                    let roomId = doc.documentID
-                    tempPending[roomId] = pendingList
-
-                    // NOTIFIKASI LOCAL DETECTOR: Deteksi jika user lokal baru saja di-approve oleh Host
-                    if let previousRoom = self.lobbyRooms.first(where: {
-                        $0.id == roomId
-                    }) {
-                        let wasPending =
-                            self.pendingRequests[roomId]?.contains(where: {
-                                $0.userId == self.currentUserId
-                            }) ?? false
-                        let isNowParticipant = participantsList.contains(
-                            where: { $0.userId == self.currentUserId })
-
-                        if wasPending && isNowParticipant {
-                            NotificationManager.shared.sendNotification(
-                                title: "Permintaan Sparring Diterima! 🎉",
-                                body:
-                                    "Host telah menyetujui permintaanmu untuk bergabung di mosi: \(data["motionTitle"] as? String ?? "")"
-                            )
-                        }
-                    }
-
-                    return SparringRoomModel(
-                        id: roomId,
-                        hostId: data["hostId"] as? String ?? "",
-                        scheduledTime: (data["scheduledTime"] as? Timestamp)?
-                            .dateValue() ?? Date(),
-                        motionTitle: data["motionTitle"] as? String ?? "",
-                        specialNotes: data["specialNotes"] as? String ?? "",
-                        meetingLink: data["meetingLink"] as? String ?? "",
-                        accessType: VisibilityType(
-                            rawValue: data["accessType"] as? String ?? "PUBLIC"
-                        ) ?? .publicAccess,
-                        state: RoomState(
-                            rawValue: data["state"] as? String ?? "PREPARING"
-                        ) ?? .preparing,
-                        participants: participantsList,
-                        isAdjudicatorNeeded: data["isAdjudicatorNeeded"]
-                            as? Bool ?? true
-                    )
-                }
-                self.pendingRequests = tempPending
+                self.processSnapshot(docs)
             }
     }
 
-    func isUserInRoom(room: SparringRoomModel) -> Bool {
-        return room.participants.contains(where: { $0.userId == currentUserId })
-    }
-
-    func isUserHost(room: SparringRoomModel) -> Bool {
-        return room.hostId == currentUserId
-    }
-
-    func isUserPending(room: SparringRoomModel) -> Bool {
-        return pendingRequests[room.id]?.contains(where: {
-            $0.userId == currentUserId
-        }) ?? false
-    }
-
+    /// Creates a new sparring room.
     func submitRoomForm() {
         self.errorMessage = nil
         self.alertMessage = nil
+
         guard !formMeetingLink.isEmpty else {
             self.errorMessage = "Meeting Link tidak boleh kosong."
             return
         }
+
         guard formScheduledTime >= Date().addingTimeInterval(-120) else {
             self.errorMessage = "Waktu sparring tidak boleh di masa lalu."
             return
         }
+
         guard let userId = Auth.auth().currentUser?.uid else { return }
 
         let newRoomId = UUID().uuidString
         let roomData: [String: Any] = [
-            "id": newRoomId, "hostId": userId,
+            "id": newRoomId,
+            "hostId": userId,
             "scheduledTime": Timestamp(date: self.formScheduledTime),
             "motionTitle": self.formMotionTitle.isEmpty
                 ? "Topik Bebas" : self.formMotionTitle,
             "specialNotes": self.formSpecialNotes,
             "meetingLink": self.formMeetingLink,
-            "accessType": self.formIsPrivate ? "PRIVATE" : "PUBLIC",
+            "accessType": self.isFormPrivate ? "PRIVATE" : "PUBLIC",
             "state": "PREPARING",
-            "participants": [], "pendingRequests": [],
+            "participants": [],
+            "pendingRequests": [],
             "isAdjudicatorNeeded": true,
         ]
 
@@ -185,6 +102,7 @@ class SparringViewModel: ObservableObject {
         }
     }
 
+    /// Joins a room directly (for public rooms).
     func joinRoom(room: SparringRoomModel, mode: RegMode) {
         guard let userId = Auth.auth().currentUser?.uid,
             let name = Auth.auth().currentUser?.displayName
@@ -204,6 +122,7 @@ class SparringViewModel: ObservableObject {
         }
     }
 
+    /// Requests to join a room (for private/moderated rooms).
     func requestJoin(roomId: String, role: RoleSlotType, isTeam: Bool) {
         let userName = Auth.auth().currentUser?.displayName ?? "Debater"
         guard let userId = Auth.auth().currentUser?.uid else { return }
@@ -223,6 +142,7 @@ class SparringViewModel: ObservableObject {
         }
     }
 
+    /// Accepts a user request to join.
     func acceptRequest(roomId: String, participantId: String) {
         guard let pendingList = pendingRequests[roomId],
             let acceptedUser = pendingList.first(where: {
@@ -230,21 +150,9 @@ class SparringViewModel: ObservableObject {
             })
         else { return }
 
-        let participantDict = [
-            "userId": acceptedUser.userId,
-            "userName": acceptedUser.userName,
-            "roleSlot": acceptedUser.roleSlot.rawValue,
-            "regMode": acceptedUser.regMode.rawValue,
-        ]
-
+        let participantDict = acceptedUser.toDictionary()
         let updatedPending = pendingList.filter { $0.userId != participantId }
-            .map {
-                [
-                    "userId": $0.userId, "userName": $0.userName,
-                    "roleSlot": $0.roleSlot.rawValue,
-                    "regMode": $0.regMode.rawValue,
-                ]
-            }
+            .map { $0.toDictionary() }
 
         db.collection("sparring_rooms").document(roomId).updateData([
             "participants": FieldValue.arrayUnion([participantDict]),
@@ -252,70 +160,178 @@ class SparringViewModel: ObservableObject {
         ])
     }
 
+    /// Rejects a user request.
     func rejectRequest(roomId: String, participantId: String) {
         guard let pendingList = pendingRequests[roomId] else { return }
         let updatedPending = pendingList.filter { $0.userId != participantId }
-            .map {
-                [
-                    "userId": $0.userId, "userName": $0.userName,
-                    "roleSlot": $0.roleSlot.rawValue,
-                    "regMode": $0.regMode.rawValue,
-                ]
-            }
+            .map { $0.toDictionary() }
+
         db.collection("sparring_rooms").document(roomId).updateData([
             "pendingRequests": updatedPending
         ])
     }
 
+    /// Cancels user's own join request.
     func cancelRequest(roomId: String) {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
-        let pendingList = pendingRequests[roomId] ?? []
+        guard let userId = Auth.auth().currentUser?.uid,
+            let pendingList = pendingRequests[roomId]
+        else { return }
+
         let updatedPending = pendingList.filter { $0.userId != userId }.map {
-            [
-                "userId": $0.userId, "userName": $0.userName,
-                "roleSlot": $0.roleSlot.rawValue,
-                "regMode": $0.regMode.rawValue,
-            ]
+            $0.toDictionary()
         }
+
         db.collection("sparring_rooms").document(roomId).updateData([
             "pendingRequests": updatedPending
         ])
     }
 
+    /// Removes user from room.
     func leaveRoom(roomId: String) {
         guard let userId = Auth.auth().currentUser?.uid,
-            let index = lobbyRooms.firstIndex(where: { $0.id == roomId })
+            let room = lobbyRooms.first(where: { $0.id == roomId })
         else { return }
-        let room = lobbyRooms[index]
+
         let updatedParticipants = room.participants.filter {
             $0.userId != userId
-        }.map {
-            [
-                "userId": $0.userId, "userName": $0.userName,
-                "roleSlot": $0.roleSlot.rawValue,
-                "regMode": $0.regMode.rawValue,
-            ]
-        }
+        }.map { $0.toDictionary() }
+
         db.collection("sparring_rooms").document(roomId).updateData([
             "participants": updatedParticipants
         ])
     }
 
+    /// Removes a specific participant from the room (Host action).
     func removeParticipant(room: SparringRoomModel, userId: String) {
-        let updatedParticipants = room.participants.filter {
-            $0.userId != userId
-        }.map {
-            [
-                "userId": $0.userId, "userName": $0.userName,
-                "roleSlot": $0.roleSlot.rawValue,
-                "regMode": $0.regMode.rawValue,
-            ]
-        }
+        let updatedParticipants = room.participants
+            .filter { $0.userId != userId }
+            .map { $0.toDictionary() }
+
         db.collection("sparring_rooms").document(room.id).updateData([
             "participants": updatedParticipants
         ])
     }
 
+    /// Completes the room session.
+    func completeRoom(roomId: String) {
+        db.collection("sparring_rooms").document(roomId).updateData([
+            "state": "DONE"
+        ]) { error in
+            if error == nil {
+                self.alertMessage = "Ruang sparring telah selesai! 🏁"
+            }
+        }
+    }
+
+    // MARK: - Helpers (Status Checkers)
+
+    func isUserInRoom(room: SparringRoomModel) -> Bool {
+        room.participants.contains(where: { $0.userId == currentUserId })
+    }
+
+    func isUserHost(room: SparringRoomModel) -> Bool {
+        room.hostId == currentUserId
+    }
+
+    func isUserPending(room: SparringRoomModel) -> Bool {
+        pendingRequests[room.id]?.contains(where: { $0.userId == currentUserId }
+        ) ?? false
+    }
+
+    // MARK: - Private Helpers
+
+    private func processSnapshot(_ docs: [QueryDocumentSnapshot]) {
+        var tempPending: [String: [ParticipantModel]] = [:]
+
+        self.lobbyRooms = docs.compactMap { doc in
+            let roomId = doc.documentID
+            let data = doc.data()
+
+            let participants = mapParticipantsData(
+                data["participants"] as? [[String: Any]] ?? []
+            )
+            let pendingList = mapParticipantsData(
+                data["pendingRequests"] as? [[String: Any]] ?? []
+            )
+
+            tempPending[roomId] = pendingList
+
+            // Check for notifications
+            checkForApprovalNotification(
+                roomId: roomId,
+                currentParticipants: participants,
+                data: data
+            )
+
+            return SparringRoomModel(
+                id: roomId,
+                hostId: data["hostId"] as? String ?? "",
+                scheduledTime: (data["scheduledTime"] as? Timestamp)?
+                    .dateValue() ?? Date(),
+                motionTitle: data["motionTitle"] as? String ?? "",
+                specialNotes: data["specialNotes"] as? String ?? "",
+                meetingLink: data["meetingLink"] as? String ?? "",
+                accessType: VisibilityType(
+                    rawValue: data["accessType"] as? String ?? "PUBLIC"
+                ) ?? .publicAccess,
+                state: RoomState(
+                    rawValue: data["state"] as? String ?? "PREPARING"
+                ) ?? .preparing,
+                participants: participants,
+                isAdjudicatorNeeded: data["isAdjudicatorNeeded"] as? Bool
+                    ?? true
+            )
+        }
+        self.pendingRequests = tempPending
+    }
+
+    private func mapParticipantsData(_ data: [[String: Any]])
+        -> [ParticipantModel]
+    {
+        data.compactMap { pData -> ParticipantModel? in
+            guard let uid = pData["userId"] as? String,
+                let roleStr = pData["roleSlot"] as? String,
+                let role = RoleSlotType(rawValue: roleStr),
+                let regStr = pData["regMode"] as? String,
+                let reg = RegMode(rawValue: regStr)
+            else { return nil }
+            return ParticipantModel(
+                userId: uid,
+                userName: pData["userName"] as? String ?? "Unknown",
+                roleSlot: role,
+                regMode: reg
+            )
+        }
+    }
+
+    private func checkForApprovalNotification(
+        roomId: String,
+        currentParticipants: [ParticipantModel],
+        data: [String: Any]
+    ) {
+        if let previousRoom = self.lobbyRooms.first(where: { $0.id == roomId })
+        {
+            let wasPending =
+                self.pendingRequests[roomId]?.contains(where: {
+                    $0.userId == self.currentUserId
+                }) ?? false
+            let isNowParticipant = currentParticipants.contains(where: {
+                $0.userId == self.currentUserId
+            })
+
+            if wasPending && isNowParticipant {
+                NotificationManager.shared.sendNotification(
+                    title: "Permintaan Sparring Diterima! 🎉",
+                    body:
+                        "Host telah menyetujui permintaanmu untuk bergabung di mosi: \(data["motionTitle"] as? String ?? "")"
+                )
+            }
+        }
+    }
+
+    // MARK: - Maintenance Methods
+
+    /// Checks for expired rooms and automatically cancels them if empty.
     func checkAndCancelExpiredRooms() {
         let now = Date()
         for room in lobbyRooms {
@@ -326,8 +342,7 @@ class SparringViewModel: ObservableObject {
                 db.collection("sparring_rooms").document(room.id).updateData([
                     "state": newState
                 ]) { _ in
-                    // NOTIFIKASI LOCAL: Picu jika room tercancel otomatis karena sepi pembeli/kosong
-                    if isEmpty && room.hostId == Auth.auth().currentUser?.uid {
+                    if isEmpty && room.hostId == self.currentUserId {
                         NotificationManager.shared.sendNotification(
                             title: "Ruang Sparring Dibatalkan ❌",
                             body:
@@ -339,28 +354,26 @@ class SparringViewModel: ObservableObject {
         }
     }
 
+    /// Cleans up old cancelled or done rooms from Firestore.
     func cleanupOldRooms() {
-        db.collection("sparring_rooms").whereField(
-            "state",
-            in: ["CANCELLED", "DONE"]
-        ).getDocuments { snapshot, _ in
-            guard let docs = snapshot?.documents else { return }
-            for doc in docs { doc.reference.delete() }
-        }
-    }
-    
-    // Tambahkan fungsi ini di SparringViewModel.swift
-        func completeRoom(roomId: String) {
-            db.collection("sparring_rooms").document(roomId).updateData([
-                "state": "DONE"
-            ]) { error in
-                if error == nil {
-                    DispatchQueue.main.async {
-                        self.alertMessage = "Ruang sparring telah berhasil diselesaikan! 🏁"
-                    }
-                } else if let error = error {
-                    print("❌ Gagal menyelesaikan room: \(error.localizedDescription)")
-                }
+        db.collection("sparring_rooms")
+            .whereField("state", in: ["CANCELLED", "DONE"])
+            .getDocuments { snapshot, _ in
+                guard let docs = snapshot?.documents else { return }
+                for doc in docs { doc.reference.delete() }
             }
-        }
+    }
+}
+
+// MARK: - Extensions for Model Transformation
+
+extension ParticipantModel {
+    func toDictionary() -> [String: Any] {
+        return [
+            "userId": userId,
+            "userName": userName,
+            "roleSlot": roleSlot.rawValue,
+            "regMode": regMode.rawValue,
+        ]
+    }
 }

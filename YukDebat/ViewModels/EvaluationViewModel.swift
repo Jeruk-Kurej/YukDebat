@@ -2,7 +2,7 @@
 //  EvaluationViewModel.swift
 //  YukDebat
 //
-//  Created by Mario Ruby Ariesusandi
+//  Created by Mario Ruby Ariesusandi 29/05/26
 //
 
 import Combine
@@ -10,6 +10,7 @@ import FirebaseFirestore
 import Foundation
 
 /// Manages the feedback loop between Adjudicators and Debaters for Case Building Notes.
+@MainActor
 class EvaluationViewModel: ObservableObject {
 
     // MARK: - Published Properties
@@ -17,76 +18,60 @@ class EvaluationViewModel: ObservableObject {
     @Published var pendingRequests: [CaseBuildingNoteModel] = []
     @Published var historyRequests: [CaseBuildingNoteModel] = []
 
+    // MARK: - Properties
+
+    private let db = Firestore.firestore()
+
     // MARK: - Methods
 
+    /// Fetches all public notes that are requesting feedback but have not received it yet.
     func fetchPendingFeedbacks() {
-        let db = Firestore.firestore()
         db.collection("case_notes")
             .whereField("isFeedbackRequested", isEqualTo: true)
             .whereField("visibility", isEqualTo: "PUBLIC")
-            .addSnapshotListener { snapshot, error in
+            .addSnapshotListener { [weak self] snapshot, _ in
                 guard let docs = snapshot?.documents else { return }
 
-                self.pendingRequests = docs.compactMap { doc in
+                let notes = docs.compactMap { doc -> CaseBuildingNoteModel? in
                     let data = doc.data()
+                    // Filter: Only include notes without feedback text
                     if data["feedbackText"] != nil { return nil }
-
-                    return CaseBuildingNoteModel(
-                        id: doc.documentID,
-                        ownerId: data["ownerId"] as? String ?? "",
-                        motionTitle: data["motionTitle"] as? String ?? "",
-                        argumentsRichText: data["argumentsRichText"] as? String
-                            ?? "",
-                        visibility: .publicAccess,
-                        isFeedbackRequested: true,
-                        updatedAt: (data["updatedAt"] as? Timestamp)?
-                            .dateValue() ?? Date(),
-                        feedbackText: data["feedbackText"] as? String,
-                        feedbackProviderName: data["feedbackProviderName"]
-                            as? String
-                    )
+                    return self?.mapToNote(from: doc)
                 }
-                self.pendingRequests.sort { $0.updatedAt < $1.updatedAt }
+
+                self?.pendingRequests = notes.sorted {
+                    $0.updatedAt < $1.updatedAt
+                }
             }
     }
 
+    /// Fetches evaluation history for a specific adjudicator.
+    /// - Parameter providerName: The name of the adjudicator.
     func fetchEvaluationHistory(providerName: String) {
-        let db = Firestore.firestore()
         db.collection("case_notes")
             .whereField("feedbackProviderName", isEqualTo: providerName)
-            .addSnapshotListener { snapshot, error in
+            .addSnapshotListener { [weak self] snapshot, _ in
                 guard let docs = snapshot?.documents else { return }
 
-                self.historyRequests = docs.compactMap { doc in
-                    let data = doc.data()
-                    return CaseBuildingNoteModel(
-                        id: doc.documentID,
-                        ownerId: data["ownerId"] as? String ?? "",
-                        motionTitle: data["motionTitle"] as? String ?? "",
-                        argumentsRichText: data["argumentsRichText"] as? String
-                            ?? "",
-                        visibility: .publicAccess,
-                        isFeedbackRequested: data["isFeedbackRequested"]
-                            as? Bool ?? false,
-                        updatedAt: (data["updatedAt"] as? Timestamp)?
-                            .dateValue() ?? Date(),
-                        feedbackText: data["feedbackText"] as? String,
-                        feedbackProviderName: data["feedbackProviderName"]
-                            as? String
-                    )
+                let notes = docs.compactMap { self?.mapToNote(from: $0) }
+                self?.historyRequests = notes.sorted {
+                    $0.updatedAt > $1.updatedAt
                 }
-                self.historyRequests.sort { $0.updatedAt > $1.updatedAt }
             }
     }
 
-    // REVISI: Tambahkan completion handler agar UI bisa nunggu!
+    /// Submits feedback to Firestore and updates the request status.
+    /// - Parameters:
+    ///   - noteId: The unique identifier of the note.
+    ///   - feedbackText: The feedback content.
+    ///   - providerName: The name of the adjudicator.
+    ///   - completion: Callback returning success status and optional error message.
     func submitFeedback(
         noteId: String,
         feedbackText: String,
         providerName: String,
         completion: @escaping (Bool, String?) -> Void
     ) {
-        let db = Firestore.firestore()
         db.collection("case_notes").document(noteId).updateData([
             "feedbackText": feedbackText,
             "feedbackProviderName": providerName,
@@ -98,5 +83,25 @@ class EvaluationViewModel: ObservableObject {
                 completion(true, nil)
             }
         }
+    }
+
+    // MARK: - Private Helpers
+
+    /// Maps Firestore document data to a CaseBuildingNoteModel.
+    private func mapToNote(from doc: QueryDocumentSnapshot)
+        -> CaseBuildingNoteModel
+    {
+        let data = doc.data()
+        return CaseBuildingNoteModel(
+            id: doc.documentID,
+            ownerId: data["ownerId"] as? String ?? "",
+            motionTitle: data["motionTitle"] as? String ?? "",
+            argumentsRichText: data["argumentsRichText"] as? String ?? "",
+            visibility: .publicAccess,
+            isFeedbackRequested: data["isFeedbackRequested"] as? Bool ?? false,
+            updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date(),
+            feedbackText: data["feedbackText"] as? String,
+            feedbackProviderName: data["feedbackProviderName"] as? String
+        )
     }
 }

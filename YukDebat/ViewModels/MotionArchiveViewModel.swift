@@ -5,23 +5,29 @@
 //  Created by Hanzelius Kwan on 29/05/26.
 //
 
+// MARK: - MotionArchive - ViewModel
+
 import Combine
 import FirebaseAuth
 import FirebaseFirestore
 import Foundation
 
-/// Manages fetching random motions and synchronizing case notes.
+/// Manages fetching random motions and synchronizing case notes via external AI proxies.
 class MotionArchiveViewModel: ObservableObject {
 
+    // MARK: - Published Properties
+
     @Published var motionsList: [MotionModel] = []
-    @Published var searchText: String = ""
     @Published var myNotes: [CaseBuildingNoteModel] = []
     @Published var communityNotes: [CaseBuildingNoteModel] = []
     @Published var isGenerating: Bool = false
 
-    // REVISI: Properti baru untuk kontrol error toast
-    @Published var showHighDemandToast: Bool = false
+    // UI state yang diakses langsung oleh view
+    @Published var searchText: String = ""
+    @Published var isHighDemandToastVisible: Bool = false
     @Published var toastMessage: String = ""
+
+    // MARK: - Computed Properties
 
     var filteredMotions: [MotionModel] {
         if searchText.isEmpty { return motionsList }
@@ -30,12 +36,16 @@ class MotionArchiveViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Dependencies
+
     private let apiProxy: CloudFunctionsProtocol
     private let localCache: CoreDataStorageProtocol
     private let db = Firestore.firestore()
 
     private var myNotesListener: ListenerRegistration?
     private var communityNotesListener: ListenerRegistration?
+
+    // MARK: - Initialization
 
     init(apiProxy: CloudFunctionsProtocol, localCache: CoreDataStorageProtocol)
     {
@@ -49,14 +59,14 @@ class MotionArchiveViewModel: ObservableObject {
         communityNotesListener?.remove()
     }
 
+    // MARK: - Methods
+
+    /// Fetches a new AI-generated motion and handles potential server limit errors.
     func triggerFetchMotion() {
         guard !isGenerating else { return }
 
-        // Aktifkan skeleton loader secara real-time di UI
-        DispatchQueue.main.async {
-            self.isGenerating = true
-            self.showHighDemandToast = false
-        }
+        isGenerating = true
+        isHighDemandToastVisible = false
 
         Task {
             do {
@@ -64,44 +74,36 @@ class MotionArchiveViewModel: ObservableObject {
                     endpoint: "get-random-motion",
                     parameters: [:]
                 )
+
                 let newMotion = MotionModel(
                     id: response["id"] as? String ?? UUID().uuidString,
                     title: response["title"] as? String ?? "Mosi Baru",
                     isWishlisted: false
                 )
 
-                DispatchQueue.main.async {
+                await MainActor.run {
                     self.motionsList.insert(newMotion, at: 0)
-                    self.isGenerating = false  // Hapus skeleton loader setelah sukses
+                    self.isGenerating = false
                 }
             } catch {
-                DispatchQueue.main.async {
-                    self.isGenerating = false  // REVISI: Sesuai instruksi, hapus skeleton jika terjadi kegagalan/high demand
-
-                    // Deteksi kode error 503 atau pesan sibuk dari Google
-                    let errStr = error.localizedDescription.lowercased()
-                    if errStr.contains("503") || errStr.contains("demand")
-                        || errStr.contains("unavailable")
-                    {
-                        self.toastMessage =
-                            "Server Gemini sedang penuh (High Demand). Silakan coba lagi nanti!"
-                    } else {
-                        self.toastMessage =
-                            "Gagal memproses AI mosi. Periksa koneksi internet."
-                    }
-                    self.showHighDemandToast = true
+                await MainActor.run {
+                    self.isGenerating = false
+                    self.handleFetchError(error)
                 }
             }
         }
     }
 
+    /// Creates a new note based on a selected debate motion.
     func createNoteFromMotion(_ motion: MotionModel) {
         guard !myNotes.contains(where: { $0.motionTitle == motion.title })
         else { return }
         guard let userId = Auth.auth().currentUser?.uid else { return }
+
         if let idx = motionsList.firstIndex(where: { $0.id == motion.id }) {
             motionsList[idx].isWishlisted = true
         }
+
         let newNote = CaseBuildingNoteModel(
             id: UUID().uuidString,
             ownerId: userId,
@@ -114,11 +116,13 @@ class MotionArchiveViewModel: ObservableObject {
         saveNote(newNote)
     }
 
+    /// Persists a case note to Firestore.
     func saveNote(_ note: CaseBuildingNoteModel) {
         var noteToSave = note
         if noteToSave.ownerId == "user_me" || noteToSave.ownerId.isEmpty {
             noteToSave.ownerId = Auth.auth().currentUser?.uid ?? "unknown"
         }
+
         var data: [String: Any] = [
             "id": noteToSave.id,
             "ownerId": noteToSave.ownerId,
@@ -128,61 +132,76 @@ class MotionArchiveViewModel: ObservableObject {
             "isFeedbackRequested": noteToSave.isFeedbackRequested,
             "updatedAt": Timestamp(date: noteToSave.updatedAt),
         ]
-        if let fText = noteToSave.feedbackText { data["feedbackText"] = fText }
-        if let fProv = noteToSave.feedbackProviderName {
-            data["feedbackProviderName"] = fProv
+
+        if let feedback = noteToSave.feedbackText {
+            data["feedbackText"] = feedback
         }
+        if let provider = noteToSave.feedbackProviderName {
+            data["feedbackProviderName"] = provider
+        }
+
         db.collection("case_notes").document(noteToSave.id).setData(
             data,
             merge: true
         )
     }
 
+    /// Requests adjudicator feedback for a public note.
     func requestFeedback(for noteId: String) {
         db.collection("case_notes").document(noteId).updateData([
             "isFeedbackRequested": true
         ])
     }
 
+    /// Removes a note from Firestore.
     func deleteNoteFromFirestore(noteId: String) {
-        db.collection("case_notes").document(noteId).delete { error in
-            if let error = error {
-                print("Error deleting note: \(error)")
-            }
-        }
+        db.collection("case_notes").document(noteId).delete()
     }
 
+    /// Fetches all notes owned by the user.
     func fetchMyNotes(userId: String) {
         myNotesListener?.remove()
-
         myNotesListener = db.collection("case_notes")
             .whereField("ownerId", isEqualTo: userId)
             .addSnapshotListener { [weak self] snapshot, _ in
-                guard let self = self, let documents = snapshot?.documents
-                else { return }
-                self.myNotes = self.mapDocumentsToNotes(documents)
+                guard let documents = snapshot?.documents else { return }
+                self?.myNotes = self?.mapDocumentsToNotes(documents) ?? []
             }
     }
 
+    /// Fetches all public notes for community viewing.
     func fetchCommunityNotes() {
         communityNotesListener?.remove()
-
         communityNotesListener = db.collection("case_notes")
             .whereField("visibility", isEqualTo: "PUBLIC")
             .addSnapshotListener { [weak self] snapshot, _ in
-                guard let self = self, let documents = snapshot?.documents
-                else { return }
-                let allPublic = self.mapDocumentsToNotes(documents)
-                self.communityNotes = allPublic
+                guard let documents = snapshot?.documents else { return }
+                self?.communityNotes =
+                    self?.mapDocumentsToNotes(documents) ?? []
             }
+    }
+
+    // MARK: - Private Helpers
+
+    private func handleFetchError(_ error: Error) {
+        let errStr = error.localizedDescription.lowercased()
+        if errStr.contains("503") || errStr.contains("demand")
+            || errStr.contains("unavailable")
+        {
+            self.toastMessage = "Server Gemini sedang penuh. Coba lagi nanti!"
+        } else {
+            self.toastMessage = "Gagal memproses AI mosi."
+        }
+        self.isHighDemandToastVisible = true
     }
 
     private func mapDocumentsToNotes(_ documents: [QueryDocumentSnapshot])
         -> [CaseBuildingNoteModel]
     {
-        let notes = documents.compactMap { doc -> CaseBuildingNoteModel? in
+        return documents.compactMap { doc -> CaseBuildingNoteModel? in
             let data = doc.data()
             let visibilityStr = data["visibility"] as? String ?? "PRIVATE"
+
             return CaseBuildingNoteModel(
                 id: doc.documentID,
                 ownerId: data["ownerId"] as? String ?? "",
@@ -198,34 +217,19 @@ class MotionArchiveViewModel: ObservableObject {
                 feedbackText: data["feedbackText"] as? String,
                 feedbackProviderName: data["feedbackProviderName"] as? String
             )
-        }
-        return notes.sorted { $0.updatedAt > $1.updatedAt }
+        }.sorted { $0.updatedAt > $1.updatedAt }
     }
 
     private func loadDefaultMotions() {
         motionsList = [
             MotionModel(
                 id: "m1",
-                title:
-                    "Melarang penggunaan kecerdasan buatan (AI) di seluruh institusi pendidikan formal.",
+                title: "Melarang penggunaan AI di institusi pendidikan formal.",
                 isWishlisted: false
             ),
             MotionModel(
                 id: "m2",
-                title:
-                    "Menyesali glorifikasi budaya kerja berlebihan (hustle culture) di kalangan generasi muda.",
-                isWishlisted: false
-            ),
-            MotionModel(
-                id: "m3",
-                title:
-                    "Mendukung penerapan sistem empat hari kerja dalam seminggu secara nasional.",
-                isWishlisted: false
-            ),
-            MotionModel(
-                id: "m4",
-                title:
-                    "Menurunkan batas usia minimum hak pilih dalam pemilihan umum menjadi 16 tahun.",
+                title: "Menyesali glorifikasi budaya kerja berlebihan.",
                 isWishlisted: false
             ),
         ]

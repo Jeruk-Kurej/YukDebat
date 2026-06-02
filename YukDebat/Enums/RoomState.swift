@@ -5,6 +5,8 @@
 //  Created by Keane Juan Suryanto on 01/06/26.
 //
 
+// MARK: - RoomState - Enum
+
 import Foundation
 
 /// Represents the current life-cycle state of a sparring room.

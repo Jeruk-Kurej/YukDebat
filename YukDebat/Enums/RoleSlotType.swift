@@ -5,6 +5,8 @@
 //  Created by Keane Juan Suryanto on 01/06/26.
 //
 
+// MARK: - RoleSlotType - Enum
+
 import Foundation
 
 /// Represents the specific debate position or role assigned to a participant in a British Parliamentary (BP) format.

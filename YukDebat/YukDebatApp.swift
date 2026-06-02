@@ -5,10 +5,13 @@
 //  Created by Bryan Carlie Lukito Setiawan on 13/05/26.
 //
 
+// MARK: - YukDebatApp - Entry Point
+
 import FirebaseCore
 import SwiftUI
-import UserNotifications  
+import UserNotifications
 
+/// Handles application lifecycle and push notification delegates.
 class AppDelegate: NSObject, UIApplicationDelegate,
     UNUserNotificationCenterDelegate
 {
@@ -18,32 +21,28 @@ class AppDelegate: NSObject, UIApplicationDelegate,
             .LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         FirebaseApp.configure()
-
-        // 1. Set delegate ke self
         UNUserNotificationCenter.current().delegate = self
         return true
     }
 
-    // 2. Fungsi ini memaksa banner muncul KAPANPUN (bahkan saat app terbuka)
+    // Forces local notifications to display as banners even when the app is in the foreground.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler:
             @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Tampilkan banner, suara, dan badge
         completionHandler([.banner, .sound, .badge])
     }
 }
 
-// 2. Layar Pemilah Sesi (Switcher)
+/// The root view orchestrating authentication state and routing.
 struct RootView: View {
     @EnvironmentObject var authVM: AuthViewModel
 
     var body: some View {
         Group {
             if authVM.userSession != nil {
-                // Jika sedang login dan data role masih loading, tampilkan indikator
                 if authVM.isLoading && authVM.currentUser == nil {
                     ZStack {
                         Color.bgCream.ignoresSafeArea()
@@ -59,7 +58,6 @@ struct RootView: View {
     }
 }
 
-// 3. Entry Point Aplikasi
 @main
 struct YukDebatApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
