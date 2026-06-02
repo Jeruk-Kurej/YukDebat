@@ -135,8 +135,16 @@ class ModerationDashboardViewModel: ObservableObject {
         ])
     }
 
-    func deletePublicNote(noteId: String) {
-        db.collection("case_notes").document(noteId).delete()
+    func hidePublicNote(noteId: String) {
+        db.collection("case_notes").document(noteId).updateData([
+            "visibility": "PRIVATE"
+        ]) { error in
+            if let error = error {
+                print("Error hiding note: \(error.localizedDescription)")
+            } else {
+                print("Note successfully set to private.")
+            }
+        }
     }
 
     func approveAdjudicator(reqId: String, userId: String) {
@@ -158,7 +166,7 @@ class ModerationDashboardViewModel: ObservableObject {
             "isActive": isActive
         ])
     }
-    
+
     func rejectAdjudicator(reqId: String) {
         db.collection("adjudicator_requests").document(reqId).updateData([
             "status": "REJECTED"

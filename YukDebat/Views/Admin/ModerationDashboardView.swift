@@ -116,7 +116,12 @@ struct ModerationDashboardView: View {
                 ForEach(viewModel.pendingAdjudicators) { req in
                     AdminAdjudicatorRow(
                         req: req,
-                        onApprove: { viewModel.approveAdjudicator(reqId: req.id, userId: req.userId) },
+                        onApprove: {
+                            viewModel.approveAdjudicator(
+                                reqId: req.id,
+                                userId: req.userId
+                            )
+                        },
                         onReject: { viewModel.rejectAdjudicator(reqId: req.id) }
                     )
                 }
@@ -223,9 +228,9 @@ struct ModerationDashboardView: View {
                     }
                     Spacer()
                     Button(action: {
-                        viewModel.deletePublicNote(noteId: note.id)
+                        viewModel.hidePublicNote(noteId: note.id)
                     }) {
-                        Image(systemName: "trash.fill").foregroundStyle(
+                        Image(systemName: "eye.slash.fill").foregroundStyle(
                             Color.btnNegative
                         )
                     }
