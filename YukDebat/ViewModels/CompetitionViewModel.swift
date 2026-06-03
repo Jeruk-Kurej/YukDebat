@@ -84,16 +84,6 @@ class CompetitionViewModel: ObservableObject {
             let imageData = selectedImageData
         else { return }
 
-        // Validate date
-        let calendar = Calendar.current
-        if calendar.compare(eventDate, to: Date(), toGranularity: .day)
-            == .orderedAscending
-        {
-            self.statusMessage =
-                "Error: Tanggal kompetisi tidak boleh di masa lalu."
-            return
-        }
-
         isLoading = true
 
         Task {

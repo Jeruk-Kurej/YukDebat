@@ -36,9 +36,6 @@ struct CompetitionCard: View {
                     if isPending {
                         badgeView(text: "PENDING", color: .orange)
                             .padding(16)
-                    } else {
-                        badgeView(text: "REGISTRATION OPEN", color: Color.btnPositive)
-                            .padding(16)
                     }
                 }
 

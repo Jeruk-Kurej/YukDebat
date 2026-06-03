@@ -94,6 +94,7 @@ struct UploadFormCompetition: View {
                         DatePicker(
                             "Event Date *",
                             selection: $viewModel.eventDate,
+                            in: Date()...,
                             displayedComponents: .date
                         )
                         .datePickerStyle(.compact)
@@ -104,7 +105,7 @@ struct UploadFormCompetition: View {
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
 
-                        // Deskripsi bersifat Opsional -> Biarkan polos tanpa tanda tambahan
+                        // Deskripsi bersifat Opsional
                         TextField(
                             "Description / Registration Info",
                             text: $viewModel.desc,
@@ -122,7 +123,6 @@ struct UploadFormCompetition: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    // KONSISTENSI BUTTON: Jika required kosong, langsung ke grey out dan disable secara total
                     .disabled(isFormInvalid || viewModel.isLoading)
                     .listRowBackground(
                         isFormInvalid || viewModel.isLoading
