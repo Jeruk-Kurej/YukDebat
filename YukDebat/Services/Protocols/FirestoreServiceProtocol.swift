@@ -23,4 +23,7 @@ protocol FirestoreServiceProtocol {
     
     /// Attaches a live listener to a specific document.
     func attachSnapshotListener(collection: String, documentId: String, completion: @escaping (Result<[String: Any], Error>) -> Void)
+    
+    func submitFeedback(noteId: String,feedbackText: String,providerName: String,completion: @escaping (Bool, String?) -> Void)
 }
+

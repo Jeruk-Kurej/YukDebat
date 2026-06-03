@@ -7,7 +7,7 @@ import SwiftUI
 
 struct AdjudicatorDashboardView: View {
     @ObservedObject var motionViewModel: MotionArchiveViewModel
-    @StateObject private var evalVM = EvaluationViewModel()
+    @ObservedObject var evalVM: EvaluationViewModel
     @EnvironmentObject var authVM: AuthViewModel
 
     @State private var selectedNote: CaseBuildingNoteModel? = nil
@@ -85,8 +85,8 @@ struct AdjudicatorDashboardView: View {
                     evalVM.fetchEvaluationHistory(providerName: juriName)
                 }
             }
-            .onChange(of: authVM.currentUser?.name) { newName in
-                if let juriName = newName {
+            .onChange(of: authVM.currentUser?.name) {
+                if let juriName = authVM.currentUser?.name {
                     evalVM.fetchEvaluationHistory(providerName: juriName)
                 }
             }

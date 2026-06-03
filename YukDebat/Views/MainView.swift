@@ -15,14 +15,17 @@ struct MainView: View {
 
     @EnvironmentObject var authVM: AuthViewModel
 
-    // FIX: Menggunakan nama class Mock yang sudah di-refactor
     @StateObject private var motionVM = MotionArchiveViewModel(
         apiProxy: CloudFunctionsMock(),
         localCache: CoreDataStorageMock()
     )
 
     @StateObject private var sparringVM = SparringViewModel(
-        dbService: FirestoreServiceMock()
+        dbService: FirestoreService()
+    )
+
+    @StateObject private var evalVM = EvaluationViewModel(
+        dbService: FirestoreService()
     )
 
     // MARK: - Body
@@ -54,8 +57,11 @@ struct MainView: View {
 
             // Menu Khusus Juri
             if authVM.currentUser?.role == .adjudicator {
-                AdjudicatorDashboardView(motionViewModel: motionVM)
-                    .tabItem { Label("Judge", systemImage: "hammer.fill") }
+                AdjudicatorDashboardView(
+                    motionViewModel: motionVM,
+                    evalVM: evalVM
+                )
+                .tabItem { Label("Judge", systemImage: "hammer.fill") }
             }
 
             // Menu Khusus Admin

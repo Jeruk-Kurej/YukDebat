@@ -118,20 +118,3 @@ struct ProvideFeedbackSheet: View {
         }
     }
 }
-
-// MARK: - Mario - Preview
-#Preview {
-    ProvideFeedbackSheet(
-        note: CaseBuildingNoteModel(
-            id: "1",
-            ownerId: "u1",
-            motionTitle: "Motion Sample",
-            argumentsRichText: "Arguments here...",
-            visibility: .publicAccess,
-            isFeedbackRequested: true,
-            updatedAt: Date()
-        ),
-        evalVM: EvaluationViewModel()
-    )
-    .environmentObject(AuthViewModel())
-}
