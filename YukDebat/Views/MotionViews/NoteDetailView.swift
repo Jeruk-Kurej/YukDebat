@@ -69,7 +69,7 @@ struct NoteDetailView: View {
         .sheet(isPresented: $showingFeedbackEditSheet) {
             ProvideFeedbackSheet(
                 note: latestNote,
-                evalVM: EvaluationViewModel()
+                evalVM: EvaluationViewModel(dbService: FirestoreService())
             )
             .environmentObject(authVM)
         }
