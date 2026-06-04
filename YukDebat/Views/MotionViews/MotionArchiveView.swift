@@ -63,7 +63,7 @@ struct MotionArchiveView: View {
                             )
                     }
                     .padding(.trailing, 24)
-                    .padding(.bottom, 110)
+                    .padding(.bottom, 16)
                 }
 
                 // Toast Notification
