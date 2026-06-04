@@ -15,31 +15,52 @@ struct CreateSparringFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Motion & Schedule Details").font(.caption.bold())) {
-                    TextField("Ketik Judul/Topik Mosi *", text: $viewModel.formMotionTitle, axis: .vertical)
-                        .lineLimit(2...4)
+                Section(
+                    header: Text("Motion & Schedule Details").font(
+                        .caption.bold()
+                    )
+                ) {
+                    TextField(
+                        "Ketik Judul/Topik Mosi *",
+                        text: $viewModel.formMotionTitle,
+                        axis: .vertical
+                    )
+                    .lineLimit(2...4)
 
-                    DatePicker("Scheduled Time *", selection: $viewModel.formScheduledTime, in: Date()..., displayedComponents: [.date, .hourAndMinute])
-                        .datePickerStyle(.compact)
-                        .environment(\.locale, Locale(identifier: "id_ID"))
+                    DatePicker(
+                        "Scheduled Time *",
+                        selection: $viewModel.formScheduledTime,
+                        in: Date()...,
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
+                    .datePickerStyle(.compact)
+                    .environment(\.locale, Locale(identifier: "id_ID"))
                 }
                 .listRowBackground(Color.white)
 
-                Section(header: Text("Meeting Information").font(.caption.bold())) {
-                    TextField("Zoom/Google Meet Link *", text: $viewModel.formMeetingLink)
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
+                Section(
+                    header: Text("Meeting Information").font(.caption.bold())
+                ) {
+                    TextField(
+                        "Zoom/Google Meet Link *",
+                        text: $viewModel.formMeetingLink
+                    )
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
 
-                    TextField("Additional Notes", text: $viewModel.formSpecialNotes)
+                    TextField(
+                        "Additional Notes",
+                        text: $viewModel.formSpecialNotes
+                    )
 
                     Toggle("Make Room Private", isOn: $viewModel.isFormPrivate)
                         .tint(Color.btnPositive)
                 }
                 .listRowBackground(Color.white)
-                
+
                 // Submit Button Section
                 Section {
-                    SparringSubmitButton(
+                    SparringSubmitButtonView(
                         isEnabled: !isFormInvalid,
                         action: {
                             viewModel.submitRoomForm()
@@ -68,5 +89,7 @@ struct CreateSparringFormView: View {
 }
 
 #Preview {
-    CreateSparringFormView(viewModel: SparringViewModel(dbService: FirestoreServiceMock()))
+    CreateSparringFormView(
+        viewModel: SparringViewModel(dbService: FirestoreServiceMock())
+    )
 }

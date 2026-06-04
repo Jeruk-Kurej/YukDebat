@@ -29,7 +29,7 @@ struct ManageSparringRoomView: View {
                     .scrollContentBackground(.hidden)
 
                     if room.state == .preparing || room.state == .ongoing {
-                        EndSparringButton(action: {
+                        EndSparringButtonView(action: {
                             viewModel.completeRoom(roomId: room.id)
                             dismiss()
                         })
@@ -40,12 +40,21 @@ struct ManageSparringRoomView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }.foregroundStyle(Color.textCharcoal)
+                    Button("Close") { dismiss() }.foregroundStyle(
+                        Color.textCharcoal
+                    )
                 }
             }
-            .alert("Remove Participant", isPresented: $showRemoveAlert, presenting: participantToRemove) { participant in
+            .alert(
+                "Remove Participant",
+                isPresented: $showRemoveAlert,
+                presenting: participantToRemove
+            ) { participant in
                 Button("Remove", role: .destructive) {
-                    viewModel.removeParticipant(room: room, userId: participant.userId)
+                    viewModel.removeParticipant(
+                        room: room,
+                        userId: participant.userId
+                    )
                 }
                 Button("Cancel", role: .cancel) {}
             } message: { _ in
@@ -63,7 +72,9 @@ struct ManageSparringRoomView: View {
                 Spacer()
                 Text(room.state.rawValue.capitalized)
                     .font(.subheadline.bold())
-                    .foregroundStyle(room.state == .ongoing ? Color.red : Color.btnPositive)
+                    .foregroundStyle(
+                        room.state == .ongoing ? Color.red : Color.btnPositive
+                    )
             }
         }
         .listRowBackground(Color.white)
@@ -73,15 +84,26 @@ struct ManageSparringRoomView: View {
         Section(header: Text("Pending Requests").font(.caption.bold())) {
             // Kita akses dictionary pendingRequests dari ViewModel
             let pendingList = viewModel.pendingRequests[room.id] ?? []
-            
+
             if pendingList.isEmpty {
-                Text("No pending requests.").foregroundStyle(.secondary).italic()
+                Text("No pending requests.").foregroundStyle(.secondary)
+                    .italic()
             } else {
                 ForEach(pendingList) { participant in
-                    PendingRequestRow(
+                    PendingRequestRowView(
                         participant: participant,
-                        onReject: { viewModel.rejectRequest(roomId: room.id, participantId: participant.userId) },
-                        onApprove: { viewModel.acceptRequest(roomId: room.id, participantId: participant.userId) }
+                        onReject: {
+                            viewModel.rejectRequest(
+                                roomId: room.id,
+                                participantId: participant.userId
+                            )
+                        },
+                        onApprove: {
+                            viewModel.acceptRequest(
+                                roomId: room.id,
+                                participantId: participant.userId
+                            )
+                        }
                     )
                 }
             }
@@ -90,21 +112,29 @@ struct ManageSparringRoomView: View {
     }
 
     private var participantsSection: some View {
-        Section(header: Text("Active Participants (\(room.participants.count)/8)").font(.caption.bold())) {
+        Section(
+            header: Text("Active Participants (\(room.participants.count)/8)")
+                .font(.caption.bold())
+        ) {
             if room.participants.isEmpty {
-                Text("No one has joined yet.").foregroundStyle(.secondary).italic()
+                Text("No one has joined yet.").foregroundStyle(.secondary)
+                    .italic()
             } else {
                 ForEach(room.participants) { participant in
-                    SparringParticipantRow(
+                    SparringParticipantRowView(
                         participant: participant,
-                        isCurrentUser: participant.userId == viewModel.currentUserId
+                        isCurrentUser: participant.userId
+                            == viewModel.currentUserId
                     )
                     .contextMenu {
                         Button(role: .destructive) {
                             participantToRemove = participant
                             showRemoveAlert = true
                         } label: {
-                            Label("Remove Participant", systemImage: "person.badge.minus")
+                            Label(
+                                "Remove Participant",
+                                systemImage: "person.badge.minus"
+                            )
                         }
                     }
                 }

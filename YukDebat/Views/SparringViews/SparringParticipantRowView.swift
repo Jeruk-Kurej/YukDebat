@@ -1,26 +1,29 @@
 //
-//  SparringParticipantRow.swift
+//  SparringParticipantRowView.swift
 //  YukDebat
 //
-//  Created by Bryan Carlie Lukito Setiawan on 03/06/26.
+//  Created by Keane Juan Suryanto on 01/06/26.
 //
 
 import SwiftUI
 
-struct SparringParticipantRow: View {
+struct SparringParticipantRowView: View {
     let participant: ParticipantModel
     let isCurrentUser: Bool
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "person.circle.fill")
                 .font(.title2)
                 .foregroundStyle(Color.accentWalnut)
-            
+
             VStack(alignment: .leading) {
-                Text(isCurrentUser ? "You (\(participant.userName))" : participant.userName)
-                    .font(.subheadline.bold())
-                Text("Debater") // placeholder email jika belum ada
+                Text(
+                    isCurrentUser
+                        ? "You (\(participant.userName))" : participant.userName
+                )
+                .font(.subheadline.bold())
+                Text("Debater")  // placeholder email jika belum ada
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()

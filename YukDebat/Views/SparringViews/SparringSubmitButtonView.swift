@@ -1,16 +1,16 @@
 //
-//  SparringSubmitButton.swift
+//  SparringSubmitButtonView.swift
 //  YukDebat
 //
-//  Created by Bryan Carlie Lukito Setiawan on 03/06/26.
+//  Created by Keane Juan Suryanto on 01/06/26.
 //
 
 import SwiftUI
 
-struct SparringSubmitButton: View {
+struct SparringSubmitButtonView: View {
     let isEnabled: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Text("Create Sparring Room")

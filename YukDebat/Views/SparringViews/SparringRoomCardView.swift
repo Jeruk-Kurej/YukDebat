@@ -1,16 +1,16 @@
 //
-//  SparringRoomCard.swift
+//  SparringRoomCardView.swift
 //  YukDebat
 //
 //  Created by Keane Juan Suryanto on 01/06/26.
 //
 
-// MARK: - SparringRoomCard - View
+// MARK: - SparringRoomCardView - View
 
 import SwiftUI
 
 /// Represents a single sparring room item in the lobby.
-struct SparringRoomCard: View {
+struct SparringRoomCardView: View {
 
     // MARK: - Properties
 
