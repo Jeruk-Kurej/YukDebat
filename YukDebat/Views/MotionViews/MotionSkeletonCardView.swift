@@ -1,13 +1,13 @@
 //
-//  MotionSkeletonCard.swift
+//  MotionSkeletonCardView.swift
 //  YukDebat
 //
-//  Created by Bryan Carlie Lukito Setiawan on 02/06/26.
+//  Created by Hanzelius on 04/06/26.
 //
 
 import SwiftUI
 
-struct MotionSkeletonCard: View {
+struct MotionSkeletonCardView: View {
     @State private var isAnimating = false
 
     var body: some View {

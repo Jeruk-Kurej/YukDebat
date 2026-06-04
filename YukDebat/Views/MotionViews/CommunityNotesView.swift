@@ -39,7 +39,7 @@ struct CommunityNotesView: View {
                                 note: note
                             )
                         ) {
-                            NoteCard(note: note)
+                            NoteCardView(note: note)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -53,16 +53,4 @@ struct CommunityNotesView: View {
             viewModel.fetchCommunityNotes()
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview {
-    CommunityNotesView(
-        viewModel: MotionArchiveViewModel(
-            apiProxy: MockCloudFunctions(),
-            localCache: LocalCoreDataStorage()
-        )
-    )
-    .background(Color.bgCream)
 }
