@@ -13,14 +13,24 @@ struct AuthInputFieldView: View {
     @Binding var text: String
     var isSecure: Bool = false
     var keyboardType: UIKeyboardType = .default
+    @State private var isPasswordVisible: Bool = false
     
     var body: some View {
-        Group {
-            if isSecure {
+        HStack {
+            if isSecure && !isPasswordVisible {
                 SecureField(title, text: $text)
             } else {
                 TextField(title, text: $text)
                     .textInputAutocapitalization(.never)
+            }
+            
+            if isSecure {
+                Button(action: {
+                    isPasswordVisible.toggle()
+                }) {
+                    Image(systemName: isPasswordVisible ? "eye.slash.fill" : "eye.fill")
+                        .foregroundColor(.gray)
+                }
             }
         }
         .padding()
