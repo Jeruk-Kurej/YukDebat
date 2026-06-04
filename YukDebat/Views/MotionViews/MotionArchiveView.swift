@@ -49,7 +49,7 @@ struct MotionArchiveView: View {
                 // FAB (Floating Action Button)
                 if selectedTab == 1 && authVM.currentUser?.role != .admin {
                     Button(action: { showingNewNoteSheet = true }) {
-                        Image(systemName: "square.and.pencil")
+                        Image(systemName: "plus")
                             .font(.title2.bold())
                             .foregroundStyle(.white)
                             .frame(width: 60, height: 60)
