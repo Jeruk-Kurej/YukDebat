@@ -36,18 +36,18 @@ struct AuthView: View {
                         
                         VStack(spacing: 16) {
                             if !isLoginMode {
-                                AuthInputField(title: "Full Name", text: $fullName)
+                                AuthInputFieldView(title: "Full Name", text: $fullName)
                                     .transition(.move(edge: .top).combined(with: .opacity))
                             }
                             
-                            AuthInputField(title: "Email Address", text: $email, isSecure: false)
+                            AuthInputFieldView(title: "Email Address", text: $email, isSecure: false)
                                 .keyboardType(.emailAddress)
                             
-                            AuthInputField(title: "Password", text: $password, isSecure: true)
+                            AuthInputFieldView(title: "Password", text: $password, isSecure: true)
                         }
                         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isLoginMode)
                         
-                        AuthActionButton(
+                        AuthActionButtonView(
                             isLoginMode: isLoginMode,
                             isLoading: authVM.isLoading,
                             isValid: isValidForm

@@ -73,21 +73,3 @@ class GeminiService: GeminiServiceProtocol {
     }
 }
 
-// MARK: - Private DTOs (Data Transfer Objects)
-// Struct ini hanya digunakan di dalam file ini, sehingga bisa diberi akses private jika perlu.
-
-private struct GeminiResponse: Decodable {
-    let candidates: [GeminiCandidate]
-}
-
-private struct GeminiCandidate: Decodable {
-    let content: GeminiContent
-}
-
-private struct GeminiContent: Decodable {
-    let parts: [GeminiPart]
-}
-
-private struct GeminiPart: Decodable {
-    let text: String
-}

@@ -29,7 +29,7 @@ struct ManageSparringRoomView: View {
                     .scrollContentBackground(.hidden)
 
                     if room.state == .preparing || room.state == .ongoing {
-                        EndSparringButton(action: {
+                        EndSparringButtonView(action: {
                             viewModel.completeRoom(roomId: room.id)
                             dismiss()
                         })
@@ -78,7 +78,7 @@ struct ManageSparringRoomView: View {
                 Text("No pending requests.").foregroundStyle(.secondary).italic()
             } else {
                 ForEach(pendingList) { participant in
-                    PendingRequestRow(
+                    PendingRequestRowView(
                         participant: participant,
                         onReject: { viewModel.rejectRequest(roomId: room.id, participantId: participant.userId) },
                         onApprove: { viewModel.acceptRequest(roomId: room.id, participantId: participant.userId) }
@@ -95,7 +95,7 @@ struct ManageSparringRoomView: View {
                 Text("No one has joined yet.").foregroundStyle(.secondary).italic()
             } else {
                 ForEach(room.participants) { participant in
-                    SparringParticipantRow(
+                    SparringParticipantRowView(
                         participant: participant,
                         isCurrentUser: participant.userId == viewModel.currentUserId
                     )

@@ -42,7 +42,7 @@ struct MyNotesListView: View {
                                 note: note
                             )
                         ) {
-                            NoteCard(note: note)
+                            NoteCardView(note: note)
                         }
                         .buttonStyle(PlainButtonStyle())
                         .contextMenu {

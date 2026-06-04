@@ -1,5 +1,5 @@
 //
-//  NoteCard.swift
+//  NoteCardView.swift
 //  YukDebat
 //
 //  Created by Hanzelius Kwan on 01/06/26.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A subcomponent representing a single case building note visually.
-struct NoteCard: View {
+struct NoteCardView: View {
 
     // MARK: Hanzelius - Properties
 
@@ -71,7 +71,7 @@ struct NoteCard: View {
 // MARK: Hanzelius - Preview
 
 #Preview {
-    NoteCard(
+    NoteCardView(
         note: CaseBuildingNoteModel(
             id: "1",
             ownerId: "user_1",

@@ -1,5 +1,5 @@
 //
-//  AppButton.swift
+//  AppButtonView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AppButton: View {
+struct AppButtonView: View {
     let title: String
     let color: Color
     let icon: String
@@ -25,7 +25,7 @@ struct AppButton: View {
 }
 
 #Preview {
-    AppButton(
+    AppButtonView(
         title: "Join Sparring",
         color: Color.btnPositive,
         icon: "person.2.fill"

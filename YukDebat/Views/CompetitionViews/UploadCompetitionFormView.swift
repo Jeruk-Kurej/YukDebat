@@ -1,5 +1,5 @@
 //
-//  UploadFormCompetition.swift
+//  UploadCompetitionFormView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
@@ -9,7 +9,7 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
-struct UploadFormCompetition: View {
+struct UploadCompetitionFormView: View {
     @ObservedObject var viewModel: CompetitionViewModel
     @Environment(\.dismiss) var dismiss
     @State private var selectedItem: PhotosPickerItem? = nil

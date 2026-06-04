@@ -1,5 +1,5 @@
 //
-//  NotificationManager.swift
+//  NotificationService.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 02/06/26.
@@ -8,8 +8,8 @@
 import Foundation
 import UserNotifications
 
-class NotificationManager {
-    static let shared = NotificationManager()
+class NotificationService {
+    static let shared = NotificationService()
 
     private init() {}
 

@@ -320,7 +320,7 @@ class SparringViewModel: ObservableObject {
             })
 
             if wasPending && isNowParticipant {
-                NotificationManager.shared.sendNotification(
+                NotificationService.shared.sendNotification(
                     title: "Permintaan Sparring Diterima! 🎉",
                     body:
                         "Host telah menyetujui permintaanmu untuk bergabung di mosi: \(data["motionTitle"] as? String ?? "")"
@@ -343,7 +343,7 @@ class SparringViewModel: ObservableObject {
                     "state": newState
                 ]) { _ in
                     if isEmpty && room.hostId == self.currentUserId {
-                        NotificationManager.shared.sendNotification(
+                        NotificationService.shared.sendNotification(
                             title: "Ruang Sparring Dibatalkan ❌",
                             body:
                                 "Ruang sparring mosi '\(room.motionTitle)' otomatis dibatalkan karena tidak ada debater yang bergabung."

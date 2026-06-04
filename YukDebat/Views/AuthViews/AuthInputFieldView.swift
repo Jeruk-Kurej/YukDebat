@@ -1,5 +1,5 @@
 //
-//  AuthInputField.swift
+//  AuthInputFieldView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 03/06/26.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A reusable, styled text input field.
-struct AuthInputField: View {
+struct AuthInputFieldView: View {
     let title: String
     @Binding var text: String
     var isSecure: Bool = false
@@ -32,5 +32,5 @@ struct AuthInputField: View {
 }
 
 #Preview {
-    AuthInputField(title: "Email", text: .constant(""))
+    AuthInputFieldView(title: "Email", text: .constant(""))
 }

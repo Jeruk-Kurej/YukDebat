@@ -1,5 +1,5 @@
 //
-//  StatusBanner.swift
+//  StatusBannerView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct StatusBanner: View {
+struct StatusBannerView: View {
     let message: String
     let isError: Bool
 
@@ -45,5 +45,5 @@ struct StatusBanner: View {
 }
 
 #Preview {
-    StatusBanner(message: "invalid data", isError: true).padding()
+    StatusBannerView(message: "invalid data", isError: true).padding()
 }

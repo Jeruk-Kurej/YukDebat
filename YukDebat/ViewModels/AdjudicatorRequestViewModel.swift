@@ -26,13 +26,13 @@ class AdjudicatorRequestViewModel: ObservableObject {
     // MARK: - Properties
 
     private let db = Firestore.firestore()
-    private let storageService: CloudStorageProtocol
+    private let storageService: CloudStorageServiceProtocol
 
     // MARK: - Initialization
 
     /// Initializes with dependency injection for storage services.
     /// - Parameter storageService: Protocol implementation for cloud storage.
-    init(storageService: CloudStorageProtocol) {
+    init(storageService: CloudStorageServiceProtocol) {
         self.storageService = storageService
     }
 

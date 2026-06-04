@@ -45,7 +45,7 @@ struct ExploreMotionListView: View {
 
             LazyVStack(spacing: 12) {
                 if viewModel.isGenerating {
-                    MotionSkeletonCard()
+                    MotionSkeletonCardView()
                         .padding(.horizontal)
                 }
 

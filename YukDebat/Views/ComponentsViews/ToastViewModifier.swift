@@ -1,5 +1,5 @@
 //
-//  ToastModifier.swift
+//  ToastViewModifier.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 // MARK: - Modern iOS Toast / HUD (HIG Compliant)
-struct ToastModifier: ViewModifier {
+struct ToastViewModifier: ViewModifier {
     @Binding var message: String?
     let isError: Bool
 
@@ -72,6 +72,6 @@ extension View {
     func modernToast(message: Binding<String?>, isError: Bool = false)
         -> some View
     {
-        self.modifier(ToastModifier(message: message, isError: isError))
+        self.modifier(ToastViewModifier(message: message, isError: isError))
     }
 }

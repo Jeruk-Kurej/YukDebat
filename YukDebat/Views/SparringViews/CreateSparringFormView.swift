@@ -39,7 +39,7 @@ struct CreateSparringFormView: View {
                 
                 // Submit Button Section
                 Section {
-                    SparringSubmitButton(
+                    SparringSubmitButtonView(
                         isEnabled: !isFormInvalid,
                         action: {
                             viewModel.submitRoomForm()

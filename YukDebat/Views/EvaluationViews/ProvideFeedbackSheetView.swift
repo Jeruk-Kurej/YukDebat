@@ -1,12 +1,12 @@
 //
-//  ProvideFeedbackSheet.swift
+//  ProvideFeedbackSheetView.swift
 //  YukDebat
 //
 
 import SwiftUI
 
 /// A bottom sheet form for Adjudicators to write and submit feedback.
-struct ProvideFeedbackSheet: View {
+struct ProvideFeedbackSheetView: View {
     // MARK: - Properties
     let note: CaseBuildingNoteModel
     @ObservedObject var evalVM: EvaluationViewModel

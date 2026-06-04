@@ -1,5 +1,5 @@
 //
-//  CoreDataStorageProtocol.swift
+//  CoreDataStorageServiceProtocol.swift
 //  YukDebat
 //
 //  Created by Mario Ruby Ariesusandi  on 29-05-2026.
@@ -10,7 +10,7 @@
 import Foundation
 
 /// Manages local persistent cache for offline-first capabilities.
-protocol CoreDataStorageProtocol {
+protocol CoreDataStorageServiceProtocol {
     
     /// Persists a draft to local storage.
     func saveLocalDraft(noteId: String, title: String, content: String) async throws

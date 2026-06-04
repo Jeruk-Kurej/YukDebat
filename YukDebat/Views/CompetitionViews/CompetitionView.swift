@@ -38,7 +38,7 @@ struct CompetitionView: View {
             .navigationTitle("Competitions")
             .onAppear { viewModel.fetchCompetitions() }
             .sheet(isPresented: $showUploadForm) {
-                UploadFormCompetition(viewModel: viewModel)
+                UploadCompetitionFormView(viewModel: viewModel)
             }
             .modernToast(
                 message: $viewModel.statusMessage,
@@ -89,7 +89,7 @@ struct CompetitionView: View {
                 .padding(.top, 16)
 
             ForEach(viewModel.myPendingCompetitions) { comp in
-                CompetitionCard(comp: comp, isPending: true)
+                CompetitionCardView(comp: comp, isPending: true)
             }
         }
     }
@@ -104,7 +104,7 @@ struct CompetitionView: View {
 
             ForEach(viewModel.activeCompetitions) { comp in
                 NavigationLink(destination: CompetitionDetailView(comp: comp)) {
-                    CompetitionCard(comp: comp, isPending: false)
+                    CompetitionCardView(comp: comp, isPending: false)
                 }
                 .buttonStyle(.plain)
             }

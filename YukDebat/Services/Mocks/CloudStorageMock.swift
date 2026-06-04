@@ -10,7 +10,7 @@
 import Foundation
 
 /// Mock implementation for testing media uploads without real network usage.
-class CloudStorageMock: CloudStorageProtocol {
+class CloudStorageMock: CloudStorageServiceProtocol {
     
     func uploadImage(imageData: Data) async throws -> String {
         try await Task.sleep(nanoseconds: 500_000_000)

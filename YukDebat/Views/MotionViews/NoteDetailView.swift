@@ -3,7 +3,7 @@
 //  YukDebat
 //
 
-import FirebaseAuth
+
 import SwiftUI
 
 struct NoteDetailView: View {
@@ -67,7 +67,7 @@ struct NoteDetailView: View {
             }
         }
         .sheet(isPresented: $showingFeedbackEditSheet) {
-            ProvideFeedbackSheet(
+            ProvideFeedbackSheetView(
                 note: latestNote,
                 evalVM: EvaluationViewModel(dbService: FirestoreService())
             )
@@ -184,4 +184,23 @@ struct NoteDetailView: View {
             }
         }
     }
+}
+
+#Preview {
+    NoteDetailView(
+        viewModel: MotionArchiveViewModel(
+            aiService: GeminiServiceMock(),
+            localCache: CoreDataStorageMock()
+        ),
+        note: CaseBuildingNoteModel(
+            id: "1",
+            ownerId: "owner",
+            motionTitle: "Sample Motion",
+            argumentsRichText: "Sample arguments",
+            visibility: .publicAccess,
+            isFeedbackRequested: false,
+            updatedAt: Date()
+        )
+    )
+    .environmentObject(AuthViewModel())
 }

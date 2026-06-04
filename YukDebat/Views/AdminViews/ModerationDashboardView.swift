@@ -90,7 +90,7 @@ struct ModerationDashboardView: View {
                 ).padding(.horizontal, 24)
             } else {
                 ForEach(viewModel.pendingList) { comp in
-                    AdminPendingCard(comp: comp) { action in
+                    AdminPendingCardView(comp: comp) { action in
                         viewModel.updateStatus(
                             compId: comp.id,
                             to: action == .approve ? "ACTIVE" : "REJECTED"
@@ -114,7 +114,7 @@ struct ModerationDashboardView: View {
                     .foregroundStyle(.secondary).padding(.horizontal, 24)
             } else {
                 ForEach(viewModel.pendingAdjudicators) { req in
-                    AdminAdjudicatorRow(
+                    AdminAdjudicatorRowView(
                         req: req,
                         onApprove: {
                             viewModel.approveAdjudicator(
@@ -143,7 +143,7 @@ struct ModerationDashboardView: View {
                     .foregroundStyle(.secondary).padding(.horizontal, 24)
             } else {
                 ForEach(viewModel.approvedList) { comp in
-                    AdminHistoryRow(comp: comp)
+                    AdminHistoryRowView(comp: comp)
                 }
             }
         }
@@ -162,7 +162,7 @@ struct ModerationDashboardView: View {
                     .foregroundStyle(.secondary).padding(.horizontal, 24)
             } else {
                 ForEach(viewModel.approvedAdjudicators) { req in
-                    AdminAdjudicatorHistoryRow(req: req)
+                    AdminAdjudicatorHistoryRowView(req: req)
                 }
             }
         }

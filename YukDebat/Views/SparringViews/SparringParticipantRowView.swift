@@ -1,5 +1,5 @@
 //
-//  SparringParticipantRow.swift
+//  SparringParticipantRowView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 03/06/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SparringParticipantRow: View {
+struct SparringParticipantRowView: View {
     let participant: ParticipantModel
     let isCurrentUser: Bool
     

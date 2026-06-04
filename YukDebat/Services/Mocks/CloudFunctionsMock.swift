@@ -8,7 +8,7 @@
 import Foundation
 
 /// Mock implementation for proxying Cloud Function calls.
-class CloudFunctionsMock: CloudFunctionsProtocol {
+class CloudFunctionsMock: CloudFunctionsServiceProtocol {
 
     private let motionPool = [
         "Kita harus menghentikan segala bentuk eksplorasi ruang angkasa sebelum seluruh masalah kemiskinan di Bumi terselesaikan",

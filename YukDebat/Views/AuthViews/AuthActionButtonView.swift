@@ -1,5 +1,5 @@
 //
-//  AuthActionButton.swift
+//  AuthActionButtonView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 03/06/26.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// Reusable action button for Login/Register.
-struct AuthActionButton: View {
+struct AuthActionButtonView: View {
     let isLoginMode: Bool
     let isLoading: Bool
     let isValid: Bool
@@ -36,5 +36,5 @@ struct AuthActionButton: View {
 }
 
 #Preview {
-    AuthActionButton(isLoginMode: true, isLoading: false, isValid: true) {}
+    AuthActionButtonView(isLoginMode: true, isLoading: false, isValid: true) {}
 }

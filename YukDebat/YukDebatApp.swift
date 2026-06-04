@@ -36,27 +36,6 @@ class AppDelegate: NSObject, UIApplicationDelegate,
     }
 }
 
-/// The root view orchestrating authentication state and routing.
-struct RootView: View {
-    @EnvironmentObject var authVM: AuthViewModel
-
-    var body: some View {
-        Group {
-            if authVM.userSession != nil {
-                if authVM.isLoading && authVM.currentUser == nil {
-                    ZStack {
-                        Color.bgCream.ignoresSafeArea()
-                        ProgressView("Memuat Data Pengguna...")
-                    }
-                } else {
-                    MainView()
-                }
-            } else {
-                AuthView()
-            }
-        }
-    }
-}
 
 @main
 struct YukDebatApp: App {
@@ -64,7 +43,7 @@ struct YukDebatApp: App {
     @StateObject var authViewModel = AuthViewModel()
 
     init() {
-        NotificationManager.shared.requestAuthorization()
+        NotificationService.shared.requestAuthorization()
     }
 
     var body: some Scene {

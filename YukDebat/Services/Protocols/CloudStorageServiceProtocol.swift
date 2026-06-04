@@ -1,5 +1,5 @@
 //
-//  CloudStorageProtocol.swift
+//  CloudStorageServiceProtocol.swift
 //  YukDebat
 //
 //  Created by Mario Ruby Ariesusandi  on 29-05-2026.
@@ -10,7 +10,7 @@
 import Foundation
 
 /// Contract for media upload operations to remote cloud storage.
-protocol CloudStorageProtocol {
+protocol CloudStorageServiceProtocol {
     
     /// Uploads raw data and returns the secure resource URL.
     func uploadImage(imageData: Data) async throws -> String

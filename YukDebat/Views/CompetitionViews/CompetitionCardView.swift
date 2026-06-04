@@ -1,5 +1,5 @@
 //
-//  CompetitionCard.swift
+//  CompetitionCardView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A card displaying a competition's poster, name, and current status.
-struct CompetitionCard: View {
+struct CompetitionCardView: View {
 
     // MARK: - Properties
 
@@ -95,7 +95,7 @@ struct CompetitionCard: View {
 
 // MARK: - Preview
 #Preview {
-//    CompetitionCard(
+//    CompetitionCardView(
 //        comp: CompetitionModel(
 //            id: "1",
 //            promoterId: "user_1",

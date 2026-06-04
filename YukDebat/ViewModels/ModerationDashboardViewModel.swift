@@ -135,7 +135,7 @@ class ModerationDashboardViewModel: ObservableObject {
             "status": status
         ]) { error in
             if error == nil && status == "ACTIVE" {
-                NotificationManager.shared.sendNotification(
+                NotificationService.shared.sendNotification(
                     title: "Lomba Berhasil Disetujui! 🏆",
                     body:
                         "Kompetisi baru telah diverifikasi oleh admin dan sekarang statusnya aktif di aplikasi."
@@ -169,7 +169,7 @@ class ModerationDashboardViewModel: ObservableObject {
         )
         batch.commit { error in
             if error == nil {
-                NotificationManager.shared.sendNotification(
+                NotificationService.shared.sendNotification(
                     title: "Pengajuan Juri Disetujui! 🎖️",
                     body:
                         "Selamat! Akun debater berhasil di-upgrade menjadi juri (Adjudicator) berlisensi."

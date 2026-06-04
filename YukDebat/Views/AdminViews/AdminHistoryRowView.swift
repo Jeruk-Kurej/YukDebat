@@ -1,5 +1,5 @@
 //
-//  AdminHistoryRow.swift
+//  AdminHistoryRowView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 01/06/26.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A read-only row displaying a previously approved competition.
-struct AdminHistoryRow: View {
+struct AdminHistoryRowView: View {
 
     // MARK: - Properties
 
@@ -58,7 +58,7 @@ struct AdminHistoryRow: View {
 // MARK: - Preview
 
 #Preview {
-    AdminHistoryRow(
+    AdminHistoryRowView(
         comp: CompetitionModel(
             id: "1",
             promoterId: "u1",

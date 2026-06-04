@@ -1,5 +1,5 @@
 //
-//  EndSparringButton.swift
+//  EndSparringButtonView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 03/06/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct EndSparringButton: View {
+struct EndSparringButtonView: View {
     let action: () -> Void
     
     var body: some View {

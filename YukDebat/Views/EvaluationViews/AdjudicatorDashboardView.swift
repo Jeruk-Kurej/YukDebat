@@ -42,7 +42,7 @@ struct AdjudicatorDashboardView: View {
                                     ForEach(evalVM.pendingRequests) { note in
                                         Button(action: { selectedNote = note })
                                         {
-                                            AdjudicatorPendingCard(note: note)
+                                            AdjudicatorPendingCardView(note: note)
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                     }
@@ -65,7 +65,7 @@ struct AdjudicatorDashboardView: View {
                                                 isAdjudicatorContext: true
                                             )
                                         ) {
-                                            AdjudicatorHistoryCard(note: note)
+                                            AdjudicatorHistoryCardView(note: note)
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                     }
@@ -91,7 +91,7 @@ struct AdjudicatorDashboardView: View {
                 }
             }
             .sheet(item: $selectedNote) { note in
-                ProvideFeedbackSheet(note: note, evalVM: evalVM)
+                ProvideFeedbackSheetView(note: note, evalVM: evalVM)
                     .environmentObject(authVM)
             }
         }
