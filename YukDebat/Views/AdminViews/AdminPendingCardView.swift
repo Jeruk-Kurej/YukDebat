@@ -1,5 +1,5 @@
 //
-//  AdminPendingCard.swift
+//  AdminPendingCardView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 01/06/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AdminPendingCard: View {
+struct AdminPendingCardView: View {
     let comp: CompetitionModel
     let onAction: (AdminAction) -> Void
 
@@ -83,7 +83,7 @@ struct AdminPendingCard: View {
 
 // MARK: - Preview
 #Preview {
-    AdminPendingCard(
+    AdminPendingCardView(
         comp: CompetitionModel(
             id: "1",
             promoterId: "user_1",

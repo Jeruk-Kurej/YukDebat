@@ -1,5 +1,5 @@
 //
-//  UploadFormCompetition.swift
+//  UploadCompetitionFormView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
@@ -9,7 +9,7 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
-struct UploadFormCompetition: View {
+struct UploadCompetitionFormView: View {
     @ObservedObject var viewModel: CompetitionViewModel
     @Environment(\.dismiss) var dismiss
     @State private var selectedItem: PhotosPickerItem? = nil
@@ -94,6 +94,7 @@ struct UploadFormCompetition: View {
                         DatePicker(
                             "Event Date *",
                             selection: $viewModel.eventDate,
+                            in: Date()...,
                             displayedComponents: .date
                         )
                         .datePickerStyle(.compact)
@@ -104,7 +105,7 @@ struct UploadFormCompetition: View {
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
 
-                        // Deskripsi bersifat Opsional -> Biarkan polos tanpa tanda tambahan
+                        // Deskripsi bersifat Opsional
                         TextField(
                             "Description / Registration Info",
                             text: $viewModel.desc,
@@ -122,7 +123,6 @@ struct UploadFormCompetition: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    // KONSISTENSI BUTTON: Jika required kosong, langsung ke grey out dan disable secara total
                     .disabled(isFormInvalid || viewModel.isLoading)
                     .listRowBackground(
                         isFormInvalid || viewModel.isLoading
@@ -152,11 +152,11 @@ struct UploadFormCompetition: View {
                     )
                 }
             }
+            .onReceive(viewModel.$statusMessage) { newValue in
+                if newValue == "Competition submitted!" {
+                    dismiss()
+                }
+            }
         }
     }
-}
-
-// MARK: - Preview
-#Preview {
-    UploadFormCompetition(viewModel: CompetitionViewModel())
 }
