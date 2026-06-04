@@ -42,7 +42,7 @@ struct MyNotesListView: View {
                                 note: note
                             )
                         ) {
-                            NoteCard(note: note)
+                            NoteCardView(note: note)
                         }
                         .buttonStyle(PlainButtonStyle())
                         .contextMenu {
@@ -82,17 +82,4 @@ struct MyNotesListView: View {
             }
         }
     }
-}
-
-// MARK: Hanzelius - Preview
-
-#Preview {
-    MyNotesListView(
-        viewModel: MotionArchiveViewModel(
-            apiProxy: MockCloudFunctions(),
-            localCache: LocalCoreDataStorage()
-        )
-    )
-    .environmentObject(AuthViewModel())
-    .background(Color.bgCream)
 }

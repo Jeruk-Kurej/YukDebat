@@ -80,26 +80,3 @@ struct NoteEditorView: View {
         }
     }
 }
-
-// MARK: Hanzelius - Preview
-
-#Preview {
-    NavigationStack {
-        NoteEditorView(
-            viewModel: MotionArchiveViewModel(
-                apiProxy: MockCloudFunctions(),
-                localCache: LocalCoreDataStorage()
-            ),
-            draftNote: CaseBuildingNoteModel(
-                id: "1",
-                ownerId: "user_1",
-                motionTitle: "",
-                argumentsRichText: "",
-                visibility: .publicAccess,
-                isFeedbackRequested: false,
-                updatedAt: Date()
-            ),
-            isNewNote: true
-        )
-    }
-}

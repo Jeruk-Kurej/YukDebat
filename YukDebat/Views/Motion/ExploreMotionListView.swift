@@ -21,7 +21,7 @@ struct ExploreMotionListView: View {
                     HStack(spacing: 8) {
                         if viewModel.isGenerating {
                             ProgressView().tint(.white)
-                            Text("Searching Motion...")
+                            Text("Generating Motion...")
                                 .font(.subheadline.bold())
                         } else {
                             Image(systemName: "sparkles")
@@ -41,8 +41,14 @@ struct ExploreMotionListView: View {
                 .disabled(viewModel.isGenerating)
             }
             .padding([.horizontal, .top])
+            .zIndex(1)
 
             LazyVStack(spacing: 12) {
+                if viewModel.isGenerating {
+                    MotionSkeletonCardView()
+                        .padding(.horizontal)
+                }
+
                 ForEach(viewModel.filteredMotions) { motion in
                     // Re-calculate isSaved untuk setiap motion setiap kali view di-render ulang
                     // Karena viewModel.myNotes adalah @Published, View akan update otomatis saat list berubah
@@ -122,10 +128,13 @@ struct ExploreMotionListView: View {
                         )
                     )
                     .padding(.horizontal)
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
             .padding(.top, 8)
             .padding(.bottom, 120)
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: viewModel.filteredMotions)
+            .animation(.easeInOut(duration: 0.3), value: viewModel.isGenerating)
         }
         .onAppear {
             if let userId = authVM.currentUser?.id {
@@ -133,15 +142,4 @@ struct ExploreMotionListView: View {
             }
         }
     }
-}
-
-// MARK: - Preview
-#Preview {
-    ExploreMotionListView(
-        viewModel: MotionArchiveViewModel(
-            apiProxy: MockCloudFunctions(),
-            localCache: LocalCoreDataStorage()
-        )
-    )
-    .environmentObject(AuthViewModel())
 }

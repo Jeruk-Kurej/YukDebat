@@ -2,8 +2,10 @@
 //  NoteDetailView.swift
 //  YukDebat
 //
+//  Created by Hanzelius Kwan on 04/06/26.
+//
 
-import FirebaseAuth
+
 import SwiftUI
 
 struct NoteDetailView: View {
@@ -67,9 +69,9 @@ struct NoteDetailView: View {
             }
         }
         .sheet(isPresented: $showingFeedbackEditSheet) {
-            ProvideFeedbackSheet(
+            ProvideFeedbackSheetView(
                 note: latestNote,
-                evalVM: EvaluationViewModel()
+                evalVM: EvaluationViewModel(dbService: FirestoreService())
             )
             .environmentObject(authVM)
         }
@@ -184,4 +186,23 @@ struct NoteDetailView: View {
             }
         }
     }
+}
+
+#Preview {
+    NoteDetailView(
+        viewModel: MotionArchiveViewModel(
+            aiService: GeminiServiceMock(),
+            localCache: CoreDataStorageMock()
+        ),
+        note: CaseBuildingNoteModel(
+            id: "1",
+            ownerId: "owner",
+            motionTitle: "Sample Motion",
+            argumentsRichText: "Sample arguments",
+            visibility: .publicAccess,
+            isFeedbackRequested: false,
+            updatedAt: Date()
+        )
+    )
+    .environmentObject(AuthViewModel())
 }
