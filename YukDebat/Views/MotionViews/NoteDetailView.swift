@@ -161,10 +161,6 @@ struct NoteDetailView: View {
                     }
                 }) {
                     HStack {
-                        Image(
-                            systemName: latestNote.isFeedbackRequested
-                                ? "hourglass" : "paperplane.fill"
-                        )
                         Text(
                             latestNote.isFeedbackRequested
                                 ? "Waiting for Adjudicator Feedback..."
