@@ -31,7 +31,6 @@ struct AdjudicatorDashboardView: View {
 
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: 16) {
-                            // BUG FIX: Memastikan Tab 0 menampilkan Pending Card
                             if selectedTab == 0 {
                                 if evalVM.pendingRequests.isEmpty {
                                     emptyStateView(
@@ -51,7 +50,6 @@ struct AdjudicatorDashboardView: View {
                                     }
                                 }
                             } else {
-                                // BUG FIX: Memastikan Tab 1 menampilkan History Card
                                 if evalVM.historyRequests.isEmpty {
                                     emptyStateView(
                                         icon: "clock.fill",
@@ -100,7 +98,6 @@ struct AdjudicatorDashboardView: View {
         }
     }
 
-    // Sub-view kecil agar kode tetap rapi
     @ViewBuilder
     private func emptyStateView(icon: String, title: String, desc: String)
         -> some View
