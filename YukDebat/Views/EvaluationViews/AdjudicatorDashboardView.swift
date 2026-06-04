@@ -45,6 +45,7 @@ struct AdjudicatorDashboardView: View {
                                             AdjudicatorPendingCardView(note: note)
                                         }
                                         .buttonStyle(PlainButtonStyle())
+                                        .id("\(note.id)-pending")
                                     }
                                 }
                             } else {
@@ -57,7 +58,7 @@ struct AdjudicatorDashboardView: View {
                                             "You haven't provided feedback on any notes."
                                     )
                                 } else {
-                                    ForEach(evalVM.historyRequests) { note in
+                                    ForEach(evalVM.historyRequests, id: \.id) { note in
                                         NavigationLink(
                                             destination: NoteDetailView(
                                                 viewModel: motionViewModel,
