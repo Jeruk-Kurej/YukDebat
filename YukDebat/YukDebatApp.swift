@@ -36,6 +36,7 @@ class AppDelegate: NSObject, UIApplicationDelegate,
     }
 }
 
+<<<<<<< HEAD
 /// The root view orchestrating authentication state and routing.
 struct RootView: View {
     @EnvironmentObject var authVM: AuthViewModel
@@ -58,13 +59,16 @@ struct RootView: View {
     }
 }
 
+=======
+
+>>>>>>> main
 @main
 struct YukDebatApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject var authViewModel = AuthViewModel()
 
     init() {
-        NotificationManager.shared.requestAuthorization()
+        NotificationService.shared.requestAuthorization()
     }
 
     var body: some Scene {

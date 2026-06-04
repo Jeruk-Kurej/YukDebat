@@ -1,3 +1,10 @@
+//
+//  EvaluationViewModel.swift
+//  YukDebat
+//
+//  Created by Mario Ruby Ariesusandi  on 01-06-2026.
+//
+
 import Combine
 import FirebaseFirestore
 import Foundation
@@ -14,6 +21,8 @@ class EvaluationViewModel: ObservableObject {
     // MARK: - Properties
     let dbService: FirestoreServiceProtocol
     private let db = Firestore.firestore()
+    private var pendingListener: ListenerRegistration?
+    private var historyListener: ListenerRegistration?
 
     // MARK: - Initialization
     init(dbService: FirestoreServiceProtocol) {
@@ -28,7 +37,8 @@ class EvaluationViewModel: ObservableObject {
     }
 
     func fetchPendingFeedbacks() {
-        db.collection("case_notes")
+        pendingListener?.remove()
+        pendingListener = db.collection("case_notes")
             .whereField("isFeedbackRequested", isEqualTo: true)
             .whereField("visibility", isEqualTo: "PUBLIC")
             .addSnapshotListener { [weak self] snapshot, _ in
@@ -47,7 +57,8 @@ class EvaluationViewModel: ObservableObject {
     }
 
     func fetchEvaluationHistory(providerName: String) {
-        db.collection("case_notes")
+        historyListener?.remove()
+        historyListener = db.collection("case_notes")
             .whereField("feedbackProviderName", isEqualTo: providerName)
             .addSnapshotListener { [weak self] snapshot, _ in
                 guard let docs = snapshot?.documents else { return }
@@ -72,8 +83,18 @@ class EvaluationViewModel: ObservableObject {
         ) { [weak self] success, error in
             DispatchQueue.main.async {
                 if success {
-                    self?.fetchEvaluations()
                     self?.statusMessage = "Feedback berhasil dikirim!"
+                    // Optimistic UI update to ensure instant reflection without waiting for listener
+                    if let self = self, let index = self.pendingRequests.firstIndex(where: { $0.id == noteId }) {
+                        var updatedNote = self.pendingRequests[index]
+                        updatedNote.feedbackText = feedbackText
+                        updatedNote.feedbackProviderName = providerName
+                        updatedNote.isFeedbackRequested = false
+                        
+                        self.pendingRequests.remove(at: index)
+                        self.historyRequests.insert(updatedNote, at: 0)
+                        self.historyRequests.sort { $0.updatedAt > $1.updatedAt }
+                    }
                 } else {
                     self?.statusMessage = "Error: \(error ?? "Gagal submit")"
                 }

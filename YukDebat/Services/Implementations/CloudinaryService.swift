@@ -10,8 +10,8 @@
 import Foundation
 import CryptoKit
 
-/// Concrete implementation of CloudStorageProtocol using Cloudinary API.
-class CloudinaryService: CloudStorageProtocol {
+/// Concrete implementation of CloudStorageServiceProtocol using Cloudinary API.
+class CloudinaryService: CloudStorageServiceProtocol {
     
     // MARK: - Properties
     private let cloudName = "dahvinw2b"
