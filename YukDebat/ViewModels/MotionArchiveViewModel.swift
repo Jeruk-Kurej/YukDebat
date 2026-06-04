@@ -38,8 +38,8 @@ class MotionArchiveViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
-    private let apiProxy: CloudFunctionsProtocol
-    private let localCache: CoreDataStorageProtocol
+    private let aiService: GeminiServiceProtocol
+    private let localCache: CoreDataStorageServiceProtocol
     private let db = Firestore.firestore()
 
     private var myNotesListener: ListenerRegistration?
@@ -47,9 +47,9 @@ class MotionArchiveViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init(apiProxy: CloudFunctionsProtocol, localCache: CoreDataStorageProtocol)
+    init(aiService: GeminiServiceProtocol, localCache: CoreDataStorageServiceProtocol)
     {
-        self.apiProxy = apiProxy
+        self.aiService = aiService
         self.localCache = localCache
         loadDefaultMotions()
     }
@@ -70,14 +70,11 @@ class MotionArchiveViewModel: ObservableObject {
 
         Task {
             do {
-                let response = try await apiProxy.callExternalAPI(
-                    endpoint: "get-random-motion",
-                    parameters: [:]
-                )
+                let motionText = try await aiService.generateMotion()
 
                 let newMotion = MotionModel(
-                    id: response["id"] as? String ?? UUID().uuidString,
-                    title: response["title"] as? String ?? "Mosi Baru",
+                    id: UUID().uuidString,
+                    title: motionText,
                     isWishlisted: false
                 )
 

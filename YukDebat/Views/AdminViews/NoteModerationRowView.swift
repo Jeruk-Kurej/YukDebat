@@ -2,7 +2,7 @@
 //  NoteModerationRowView.swift
 //  YukDebat
 //
-//  Created by Mario Ruby Ariesusandi  on 04-06-2026.
+//  Created by Keane Juan Suryanto on 01/06/26.
 //
 
 import SwiftUI

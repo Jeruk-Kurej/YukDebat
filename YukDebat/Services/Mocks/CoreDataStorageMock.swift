@@ -10,7 +10,7 @@
 import Foundation
 
 /// Mock implementation for local storage persistence.
-class CoreDataStorageMock: CoreDataStorageProtocol {
+class CoreDataStorageMock: CoreDataStorageServiceProtocol {
     
     func saveLocalDraft(noteId: String, title: String, content: String) async throws {
         print("Mock CoreData: Draft \(noteId) saved locally.")

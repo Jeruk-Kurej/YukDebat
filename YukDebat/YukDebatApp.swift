@@ -36,32 +36,7 @@ class AppDelegate: NSObject, UIApplicationDelegate,
     }
 }
 
-<<<<<<< HEAD
-/// The root view orchestrating authentication state and routing.
-struct RootView: View {
-    @EnvironmentObject var authVM: AuthViewModel
 
-    var body: some View {
-        Group {
-            if authVM.userSession != nil {
-                if authVM.isLoading && authVM.currentUser == nil {
-                    ZStack {
-                        Color.bgCream.ignoresSafeArea()
-                        ProgressView("Memuat Data Pengguna...")
-                    }
-                } else {
-                    MainView()
-                }
-            } else {
-                AuthView()
-            }
-        }
-    }
-}
-
-=======
-
->>>>>>> main
 @main
 struct YukDebatApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate

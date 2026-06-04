@@ -97,7 +97,7 @@ struct ProfileView: View {
         VStack(spacing: 0) {
             // 1. MENU EDIT ACCOUNT
             NavigationLink(destination: EditProfileView()) {
-                ProfileMenuRow(
+                ProfileMenuRowView(
                     icon: "person.text.rectangle",
                     title: "Edit Account Information"
                 )
@@ -119,7 +119,7 @@ struct ProfileView: View {
 
             // 2. MENU TOS
             NavigationLink(destination: TermsOfServiceView()) {
-                ProfileMenuRow(
+                ProfileMenuRowView(
                     icon: "doc.text.fill",
                     title: "Terms of Service (TOS)"
                 )

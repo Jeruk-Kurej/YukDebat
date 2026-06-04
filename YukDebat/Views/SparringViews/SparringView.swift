@@ -32,10 +32,7 @@ struct SparringView: View {
                         }
 
                         ForEach(viewModel.lobbyRooms) { room in
-                            SparringRoomCardView(
-                                room: room,
-                                viewModel: viewModel
-                            )
+                            SparringRoomCardView(room: room, viewModel: viewModel)
                         }
                     }
                     .padding(.horizontal, 16)

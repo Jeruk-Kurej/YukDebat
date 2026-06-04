@@ -1,8 +1,8 @@
 //
-//  UserManagementView.swift
+//  AdminAdjudicatorRowView.swift
 //  YukDebat
 //
-//  Created by Mario Ruby Ariesusandi  on 04-06-2026.
+//  Created by Keane Juan Suryanto on 01/06/26.
 //
 
 import SwiftUI
@@ -14,6 +14,7 @@ struct UserManagementView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 16) {
+                // User Management
                 Text("User Management")
                     .font(.subheadline.bold())
                     .foregroundStyle(.blue)
@@ -26,6 +27,7 @@ struct UserManagementView: View {
                 
                 Divider().padding(.vertical, 16)
                 
+                // Content Moderation
                 Text("Public Notes Moderation")
                     .font(.subheadline.bold())
                     .foregroundStyle(.red)

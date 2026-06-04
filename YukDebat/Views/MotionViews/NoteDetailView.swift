@@ -2,8 +2,6 @@
 //  NoteDetailView.swift
 //  YukDebat
 //
-//  Created by Hanzelius Kwan on 04/06/26.
-//
 
 
 import SwiftUI
