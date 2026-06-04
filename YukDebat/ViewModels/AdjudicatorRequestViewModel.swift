@@ -67,12 +67,10 @@ class AdjudicatorRequestViewModel: ObservableObject {
 
         Task {
             do {
-                // 1. Upload certificate image to Cloud Storage
                 let uploadedUrl = try await storageService.uploadImage(
                     imageData: imageData
                 )
 
-                // 2. Save Request Data to Firestore
                 let reqId = UUID().uuidString
                 let data: [String: Any] = [
                     "id": reqId,
@@ -88,7 +86,6 @@ class AdjudicatorRequestViewModel: ObservableObject {
                 try await db.collection("adjudicator_requests").document(reqId)
                     .setData(data)
 
-                // 3. Success State
                 self.isLoading = false
                 self.statusMessage = "Request successfully submitted!"
                 self.hasPendingRequest = true
