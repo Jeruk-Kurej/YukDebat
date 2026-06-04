@@ -1,3 +1,10 @@
+//
+//  MotionArchiveView.swift
+//  YukDebat
+//
+//  Created by Hanzelius 04/06/26
+//
+
 import SwiftUI
 
 struct MotionArchiveView: View {
@@ -13,6 +20,7 @@ struct MotionArchiveView: View {
                 Color.bgCream.ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    // Tab Picker
                     if authVM.currentUser?.role != .admin {
                         Picker("Navigation Menu", selection: $selectedTab) {
                             Text("Explore").tag(0)
@@ -23,30 +31,22 @@ struct MotionArchiveView: View {
                         .padding()
                     }
 
-                    // KONDISI JIKA SEDANG GENERATE: Selalu munculkan skeleton di tab Explore / Admin paling atas
-                    if viewModel.isGenerating
-                        && (selectedTab == 0
-                            || authVM.currentUser?.role == .admin)
-                    {
-                        MotionSkeletonCard()
-                            .padding(.horizontal)
-                            .padding(.top, 8)
-                    }
 
+                    // Main Content
                     if authVM.currentUser?.role == .admin {
                         ExploreMotionListView(viewModel: viewModel)
                     } else {
-                        if selectedTab == 0 {
-                            ExploreMotionListView(viewModel: viewModel)
-                        } else if selectedTab == 1 {
-                            MyNotesListView(viewModel: viewModel)
-                        } else {
-                            CommunityNotesView(viewModel: viewModel)
+                        Group {
+                            switch selectedTab {
+                            case 0: ExploreMotionListView(viewModel: viewModel)
+                            case 1: MyNotesListView(viewModel: viewModel)
+                            default: CommunityNotesView(viewModel: viewModel)
+                            }
                         }
                     }
                 }
 
-                // Tampilan FAB untuk My Notes
+                // FAB (Floating Action Button)
                 if selectedTab == 1 && authVM.currentUser?.role != .admin {
                     Button(action: { showingNewNoteSheet = true }) {
                         Image(systemName: "square.and.pencil")
@@ -66,33 +66,10 @@ struct MotionArchiveView: View {
                     .padding(.bottom, 110)
                 }
 
-                // POP-UP TOAST OVERLAY JIKA TERJADI HIGH DEMAND (503)
-                if viewModel.showHighDemandToast {
-                    VStack {
-                        Spacer()
-                        HStack(spacing: 12) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.white)
-                            Text(viewModel.toastMessage)
-                                .font(.subheadline.bold())
-                                .foregroundStyle(.white)
-                        }
-                        .padding()
-                        .background(Color.red.opacity(0.9))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .shadow(radius: 6)
-                        .padding(.bottom, 120)
-                        .padding(.horizontal, 24)
-                        .onAppear {
-                            // Toast otomatis hilang setelah 4 detik
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 4)
-                            {
-                                viewModel.showHighDemandToast = false
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                // Toast Notification
+                // PENTING: Jangan pakai $ di dalam if, dan gunakan nama variabel yang benar
+                if viewModel.isHighDemandToastVisible {
+                    toastView
                 }
             }
             .navigationTitle(
@@ -122,16 +99,32 @@ struct MotionArchiveView: View {
             }
         }
     }
-}
 
-// MARK: - Preview
+    // MARK: - Sub-View
 
-#Preview {
-    MotionArchiveView(
-        viewModel: MotionArchiveViewModel(
-            apiProxy: MockCloudFunctions(),
-            localCache: LocalCoreDataStorage()
-        )
-    )
-    .environmentObject(AuthViewModel())
+    private var toastView: some View {
+        VStack {
+            Spacer()
+            HStack(spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.white)
+                Text(viewModel.toastMessage)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+            }
+            .padding()
+            .background(Color.red.opacity(0.9))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(radius: 6)
+            .padding(.bottom, 120)
+            .padding(.horizontal, 24)
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                    viewModel.isHighDemandToastVisible = false
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
 }
