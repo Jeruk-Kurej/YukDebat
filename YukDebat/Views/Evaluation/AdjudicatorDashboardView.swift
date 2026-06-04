@@ -2,12 +2,14 @@
 //  AdjudicatorDashboardView.swift
 //  YukDebat
 //
+//  Created by Mario Ruby Ariesusandi  on 01-06-2026.
+//
 
 import SwiftUI
 
 struct AdjudicatorDashboardView: View {
     @ObservedObject var motionViewModel: MotionArchiveViewModel
-    @StateObject private var evalVM = EvaluationViewModel()
+    @ObservedObject var evalVM: EvaluationViewModel
     @EnvironmentObject var authVM: AuthViewModel
 
     @State private var selectedNote: CaseBuildingNoteModel? = nil
@@ -42,9 +44,10 @@ struct AdjudicatorDashboardView: View {
                                     ForEach(evalVM.pendingRequests) { note in
                                         Button(action: { selectedNote = note })
                                         {
-                                            AdjudicatorPendingCard(note: note)
+                                            AdjudicatorPendingCardView(note: note)
                                         }
                                         .buttonStyle(PlainButtonStyle())
+                                        .id("\(note.id)-pending")
                                     }
                                 }
                             } else {
@@ -57,7 +60,7 @@ struct AdjudicatorDashboardView: View {
                                             "You haven't provided feedback on any notes."
                                     )
                                 } else {
-                                    ForEach(evalVM.historyRequests) { note in
+                                    ForEach(evalVM.historyRequests, id: \.id) { note in
                                         NavigationLink(
                                             destination: NoteDetailView(
                                                 viewModel: motionViewModel,
@@ -65,7 +68,7 @@ struct AdjudicatorDashboardView: View {
                                                 isAdjudicatorContext: true
                                             )
                                         ) {
-                                            AdjudicatorHistoryCard(note: note)
+                                            AdjudicatorHistoryCardView(note: note)
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                     }
@@ -85,13 +88,13 @@ struct AdjudicatorDashboardView: View {
                     evalVM.fetchEvaluationHistory(providerName: juriName)
                 }
             }
-            .onChange(of: authVM.currentUser?.name) { newName in
-                if let juriName = newName {
+            .onChange(of: authVM.currentUser?.name) {
+                if let juriName = authVM.currentUser?.name {
                     evalVM.fetchEvaluationHistory(providerName: juriName)
                 }
             }
             .sheet(item: $selectedNote) { note in
-                ProvideFeedbackSheet(note: note, evalVM: evalVM)
+                ProvideFeedbackSheetView(note: note, evalVM: evalVM)
                     .environmentObject(authVM)
             }
         }
@@ -113,15 +116,4 @@ struct AdjudicatorDashboardView: View {
         }
         .padding(.top, 80)
     }
-}
-
-// MARK: - Mario - Preview
-#Preview {
-    AdjudicatorDashboardView(
-        motionViewModel: MotionArchiveViewModel(
-            apiProxy: MockCloudFunctions(),
-            localCache: LocalCoreDataStorage()
-        )
-    )
-    .environmentObject(AuthViewModel())
 }

@@ -5,12 +5,13 @@
 //  Created by Keane Juan Suryanto on 01/06/26.
 //
 
+// MARK: - AdjudicatorRequestModel - Model
+
 import FirebaseFirestore
 import Foundation
 
-/// Model untuk menyimpan data pengajuan seorang debater menjadi Juri (Adjudicator).
+/// Encapsulates data for a debater's application to upgrade their role to an Adjudicator.
 struct AdjudicatorRequestModel: Identifiable, Equatable {
-    // MARK: - Properties
     let id: String
     let userId: String
     let userEmail: String

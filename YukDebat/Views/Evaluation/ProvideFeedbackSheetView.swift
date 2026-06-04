@@ -1,12 +1,14 @@
 //
-//  ProvideFeedbackSheet.swift
+//  ProvideFeedbackSheetView.swift
 //  YukDebat
+//
+//  Created by Mario Ruby Ariesusandi  on 01-06-2026.
 //
 
 import SwiftUI
 
 /// A bottom sheet form for Adjudicators to write and submit feedback.
-struct ProvideFeedbackSheet: View {
+struct ProvideFeedbackSheetView: View {
     // MARK: - Properties
     let note: CaseBuildingNoteModel
     @ObservedObject var evalVM: EvaluationViewModel
@@ -117,21 +119,4 @@ struct ProvideFeedbackSheet: View {
             }
         }
     }
-}
-
-// MARK: - Mario - Preview
-#Preview {
-    ProvideFeedbackSheet(
-        note: CaseBuildingNoteModel(
-            id: "1",
-            ownerId: "u1",
-            motionTitle: "Motion Sample",
-            argumentsRichText: "Arguments here...",
-            visibility: .publicAccess,
-            isFeedbackRequested: true,
-            updatedAt: Date()
-        ),
-        evalVM: EvaluationViewModel()
-    )
-    .environmentObject(AuthViewModel())
 }
