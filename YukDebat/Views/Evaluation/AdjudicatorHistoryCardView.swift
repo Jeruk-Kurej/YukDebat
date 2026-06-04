@@ -1,5 +1,5 @@
 //
-//  AdjudicatorHistoryCard.swift
+//  AdjudicatorHistoryCardView.swift
 //  YukDebat
 //
 //  Created by Mario Ruby Ariesusandi  on 01-06-2026.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A card for previously reviewed notes.
-struct AdjudicatorHistoryCard: View {
+struct AdjudicatorHistoryCardView: View {
     let note: CaseBuildingNoteModel
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -55,7 +55,7 @@ struct AdjudicatorHistoryCard: View {
 }
 
 #Preview {
-    AdjudicatorHistoryCard(
+    AdjudicatorHistoryCardView(
         note: CaseBuildingNoteModel(
             id: "1",
             ownerId: "",

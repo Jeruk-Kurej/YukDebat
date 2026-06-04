@@ -1,5 +1,5 @@
 //
-//  AdjudicatorPendingCard.swift
+//  AdjudicatorPendingCardView.swift
 //  YukDebat
 //
 //  Created by Mario Ruby Ariesusandi  on 01-06-2026.
@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A card for notes awaiting review.
-struct AdjudicatorPendingCard: View {
+struct AdjudicatorPendingCardView: View {
     let note: CaseBuildingNoteModel
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -46,7 +46,7 @@ struct AdjudicatorPendingCard: View {
 }
 
 #Preview {
-    AdjudicatorPendingCard(
+    AdjudicatorPendingCardView(
         note: CaseBuildingNoteModel(
             id: "1",
             ownerId: "",
