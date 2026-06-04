@@ -31,15 +31,6 @@ struct MotionArchiveView: View {
                         .padding()
                     }
 
-                    // Loading Skeleton
-                    if viewModel.isGenerating
-                        && (selectedTab == 0
-                            || authVM.currentUser?.role == .admin)
-                    {
-                        MotionSkeletonCard()
-                            .padding(.horizontal)
-                            .padding(.top, 8)
-                    }
 
                     // Main Content
                     if authVM.currentUser?.role == .admin {

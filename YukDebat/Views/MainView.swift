@@ -16,7 +16,7 @@ struct MainView: View {
     @EnvironmentObject var authVM: AuthViewModel
 
     @StateObject private var motionVM = MotionArchiveViewModel(
-        apiProxy: CloudFunctionsMock(),
+        aiService: GeminiService(),
         localCache: CoreDataStorageMock()
     )
 

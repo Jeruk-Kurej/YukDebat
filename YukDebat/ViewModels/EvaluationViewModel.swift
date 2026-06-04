@@ -77,6 +77,17 @@ class EvaluationViewModel: ObservableObject {
             DispatchQueue.main.async {
                 if success {
                     self?.statusMessage = "Feedback berhasil dikirim!"
+                    // Optimistic UI update to ensure instant reflection without waiting for listener
+                    if let self = self, let index = self.pendingRequests.firstIndex(where: { $0.id == noteId }) {
+                        var updatedNote = self.pendingRequests[index]
+                        updatedNote.feedbackText = feedbackText
+                        updatedNote.feedbackProviderName = providerName
+                        updatedNote.isFeedbackRequested = false
+                        
+                        self.pendingRequests.remove(at: index)
+                        self.historyRequests.insert(updatedNote, at: 0)
+                        self.historyRequests.sort { $0.updatedAt > $1.updatedAt }
+                    }
                 } else {
                     self?.statusMessage = "Error: \(error ?? "Gagal submit")"
                 }

@@ -15,7 +15,9 @@ class GeminiService: GeminiServiceProtocol {
 
     // MARK: - Properties
 
-    private let apiKey = "AIzaSyAw5APulcGqxr-Fpm5a6wKRDPf10NbqVn4"
+    private var apiKey: String {
+        return APIKey.gemini
+    }
     private let endpoint =
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 

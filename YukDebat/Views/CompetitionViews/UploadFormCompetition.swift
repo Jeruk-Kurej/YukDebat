@@ -152,9 +152,8 @@ struct UploadFormCompetition: View {
                     )
                 }
             }
-            .onChange(of: viewModel.statusMessage) { newValue in
+            .onReceive(viewModel.$statusMessage) { newValue in
                 if newValue == "Competition submitted!" {
-                    viewModel.statusMessage = nil
                     dismiss()
                 }
             }
