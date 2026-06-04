@@ -58,7 +58,6 @@ struct TermsOfServiceView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
     
-    // UI Komponen kecil agar rapi
     @ViewBuilder
     private func tosSection(title: String, content: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {

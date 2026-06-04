@@ -47,7 +47,6 @@ struct EditProfileView: View {
         .navigationTitle("Edit Account")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            // Tarik nama awal saat halaman dimuat
             newName = authVM.currentUser?.name ?? ""
         }
         .toolbar {
@@ -69,13 +68,11 @@ struct EditProfileView: View {
         isUpdating = true
         errorMessage = ""
         
-        // Panggil fungsi dari ViewModel (MVVM Compliant)
         authVM.updateName(newName: trimmedName) { error in
             isUpdating = false
             if let error = error {
                 self.errorMessage = error.localizedDescription
             } else {
-                // Snapshot listener di AuthViewModel akan otomatis mengurus perubahannya di UI
                 dismiss()
             }
         }
