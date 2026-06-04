@@ -1,5 +1,5 @@
 //
-//  UploadFormCompetition.swift
+//  UploadCompetitionFormView.swift
 //  YukDebat
 //
 //  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
@@ -9,18 +9,27 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
-struct UploadFormCompetition: View {
+struct UploadCompetitionFormView: View {
     @ObservedObject var viewModel: CompetitionViewModel
     @Environment(\.dismiss) var dismiss
     @State private var selectedItem: PhotosPickerItem? = nil
+
+    // Cek validasi required field
+    private var isFormInvalid: Bool {
+        viewModel.name.isEmpty || viewModel.registrationUrl.isEmpty
+            || viewModel.selectedImageData == nil
+    }
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.bgCream.ignoresSafeArea()
                 Form {
+                    // Poster bersertifikat/Lomba dianggap Required (*)
                     Section(
-                        header: Text("Competition Poster").font(.caption.bold())
+                        header: Text("Competition Poster *").font(
+                            .caption.bold()
+                        )
                     ) {
                         HStack {
                             Spacer()
@@ -40,7 +49,7 @@ struct UploadFormCompetition: View {
                                     VStack(spacing: 12) {
                                         Image(systemName: "photo.badge.plus")
                                             .font(.system(size: 40))
-                                        Text("Select Poster").font(.headline)
+                                        Text("Select Poster *").font(.headline)
                                     }
                                     .foregroundStyle(Color.accentWalnut).frame(
                                         maxWidth: .infinity
@@ -81,20 +90,22 @@ struct UploadFormCompetition: View {
                             .caption.bold()
                         )
                     ) {
-                        TextField("Competition Name", text: $viewModel.name)
+                        TextField("Competition Name *", text: $viewModel.name)
                         DatePicker(
-                            "Event Date",
+                            "Event Date *",
                             selection: $viewModel.eventDate,
-                            in: Date()...,  
+                            in: Date()...,
                             displayedComponents: .date
                         )
                         .datePickerStyle(.compact)
                         TextField(
-                            "Registration Link (URL)",
+                            "Registration Link (URL) *",
                             text: $viewModel.registrationUrl
                         )
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
+
+                        // Deskripsi bersifat Opsional
                         TextField(
                             "Description / Registration Info",
                             text: $viewModel.desc,
@@ -112,27 +123,23 @@ struct UploadFormCompetition: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    .disabled(viewModel.isLoading)
+                    .disabled(isFormInvalid || viewModel.isLoading)
                     .listRowBackground(
-                        viewModel.isLoading ? Color.gray : Color.btnPositive
+                        isFormInvalid || viewModel.isLoading
+                            ? Color.gray : Color.btnPositive
                     )
                 }
                 .scrollContentBackground(.hidden)
 
                 if viewModel.isLoading {
-                    Color.black.opacity(0.4)
-                        .ignoresSafeArea()
-
+                    Color.black.opacity(0.4).ignoresSafeArea()
                     VStack(spacing: 16) {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                            .tint(.white)
-                        Text("Uploading...")
-                            .font(.headline)
-                            .foregroundStyle(.white)
+                        ProgressView().scaleEffect(1.5).tint(.white)
+                        Text("Uploading...").font(.headline).foregroundStyle(
+                            .white
+                        )
                     }
-                    .padding(32)
-                    .background(Color.black.opacity(0.7))
+                    .padding(32).background(Color.black.opacity(0.7))
                     .cornerRadius(16)
                 }
             }
@@ -145,11 +152,11 @@ struct UploadFormCompetition: View {
                     )
                 }
             }
+            .onReceive(viewModel.$statusMessage) { newValue in
+                if newValue == "Competition submitted!" {
+                    dismiss()
+                }
+            }
         }
     }
-}
-
-// MARK: - Preview
-#Preview {
-    UploadFormCompetition(viewModel: CompetitionViewModel())
 }

@@ -5,57 +5,46 @@
 //  Created by Bryan Carlie Lukito Setiawan on 13/05/26.
 //
 
-import FirebaseAppCheck
-import FirebaseAuth
+// MARK: - YukDebatApp - Entry Point
+
 import FirebaseCore
 import SwiftUI
+import UserNotifications
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+/// Handles application lifecycle and push notification delegates.
+class AppDelegate: NSObject, UIApplicationDelegate,
+    UNUserNotificationCenterDelegate
+{
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication
             .LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-
-        #if DEBUG
-            let providerFactory = AppCheckDebugProviderFactory()
-            AppCheck.setAppCheckProviderFactory(providerFactory)
-        #endif
-        // ------------------------------------------
-
         FirebaseApp.configure()
+        UNUserNotificationCenter.current().delegate = self
         return true
     }
-}
 
-// 2. Layar Pemilah Sesi (Switcher)
-struct RootView: View {
-    @EnvironmentObject var authVM: AuthViewModel
-
-    var body: some View {
-        Group {
-            if authVM.userSession != nil {
-                // Jika sedang login dan data role masih loading, tampilkan indikator
-                if authVM.isLoading && authVM.currentUser == nil {
-                    ZStack {
-                        Color.bgCream.ignoresSafeArea()
-                        ProgressView("Memuat Data Pengguna...")
-                    }
-                } else {
-                    MainView()
-                }
-            } else {
-                AuthView()
-            }
-        }
+    // Forces local notifications to display as banners even when the app is in the foreground.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler:
+            @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .badge])
     }
 }
 
-// 3. Entry Point Aplikasi
+
 @main
 struct YukDebatApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject var authViewModel = AuthViewModel()
+
+    init() {
+        NotificationService.shared.requestAuthorization()
+    }
 
     var body: some Scene {
         WindowGroup {

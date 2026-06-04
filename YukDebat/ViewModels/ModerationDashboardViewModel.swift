@@ -2,7 +2,7 @@
 //  ModerationDashboardViewModel.swift
 //  YukDebat
 //
-//  Created by Keane Juan Suryanto on 29/05/26.
+//  Created by Bryan Carlie Lukito Setiawan on 29/05/26
 //
 
 import Combine
@@ -129,10 +129,19 @@ class ModerationDashboardViewModel: ObservableObject {
         }
     }
 
+    // REVISI POIN 1: Tambahkan pemicu Notifikasi HP saat upload lomba di-approve admin
     func updateStatus(compId: String, to status: String) {
         db.collection("competitions").document(compId).updateData([
             "status": status
-        ])
+        ]) { error in
+            if error == nil && status == "ACTIVE" {
+                NotificationService.shared.sendNotification(
+                    title: "Lomba Berhasil Disetujui! 🏆",
+                    body:
+                        "Kompetisi baru telah diverifikasi oleh admin dan sekarang statusnya aktif di aplikasi."
+                )
+            }
+        }
     }
 
     func hidePublicNote(noteId: String) {
@@ -147,6 +156,7 @@ class ModerationDashboardViewModel: ObservableObject {
         }
     }
 
+    // REVISI POIN 1: Tambahkan pemicu Notifikasi HP saat pengajuan juri di-approve admin
     func approveAdjudicator(reqId: String, userId: String) {
         let batch = db.batch()
         batch.updateData(
@@ -157,7 +167,15 @@ class ModerationDashboardViewModel: ObservableObject {
             ["role": "ADJUDICATOR"],
             forDocument: db.collection("users").document(userId)
         )
-        batch.commit { _ in }
+        batch.commit { error in
+            if error == nil {
+                NotificationService.shared.sendNotification(
+                    title: "Pengajuan Juri Disetujui! 🎖️",
+                    body:
+                        "Selamat! Akun debater berhasil di-upgrade menjadi juri (Adjudicator) berlisensi."
+                )
+            }
+        }
     }
 
     func suspendUser(user: UserModel, isActive: Bool) {
