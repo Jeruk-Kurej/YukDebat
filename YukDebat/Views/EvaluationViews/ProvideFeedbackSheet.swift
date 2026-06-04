@@ -23,7 +23,6 @@ struct ProvideFeedbackSheetView: View {
     init(note: CaseBuildingNoteModel, evalVM: EvaluationViewModel) {
         self.note = note
         self.evalVM = evalVM
-        // Paksa state terisi sejak awal sebelum View dirender
         _feedbackText = State(initialValue: note.feedbackText ?? "")
     }
 

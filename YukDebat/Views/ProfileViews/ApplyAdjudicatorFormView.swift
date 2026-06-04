@@ -15,7 +15,6 @@ struct ApplyAdjudicatorFormView: View {
 
     @State private var selectedItem: PhotosPickerItem? = nil
 
-    // Semua field di form apply juri bersifat WAJIB (*)
     private var isFormInvalid: Bool {
         viewModel.experience.isEmpty || viewModel.selectedImageData == nil
     }
@@ -122,7 +121,6 @@ struct ApplyAdjudicatorFormView: View {
                         }
                     }
                     .fontWeight(.bold)
-                    // KONSISTENSI WARNA ACTION: Ikut berubah menjadi abu-abu jika form invalid
                     .foregroundStyle(
                         isFormInvalid || viewModel.isLoading
                             ? Color.gray : Color.btnPositive
