@@ -60,6 +60,8 @@ struct AuthView: View {
                     .padding(.horizontal, 24)
                 }
             }
+            .navigationTitle(isLoginMode ? "Login" : "Register")
+            .navigationBarTitleDisplayMode(.inline)
             .modernToast(message: $authVM.errorMessage, isError: true)
         }
     }
