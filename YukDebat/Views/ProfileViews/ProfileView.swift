@@ -13,6 +13,7 @@ struct ProfileView: View {
 
     @EnvironmentObject var authVM: AuthViewModel
 
+    // FIX: Masukkan CloudinaryService sebagai dependency injection
     @StateObject private var adjReqVM = AdjudicatorRequestViewModel(
         storageService: CloudinaryService()
     )
@@ -53,6 +54,7 @@ struct ProfileView: View {
             } message: {
                 Text("Are you sure you want to log out from YukDebat?")
             }
+            // FIX: Menggunakan statusMessage sesuai ViewModel yang baru
             .modernToast(
                 message: $adjReqVM.statusMessage,
                 isError: adjReqVM.statusMessage?.contains("Failed") == true
@@ -93,14 +95,16 @@ struct ProfileView: View {
 
     private var settingsSection: some View {
         VStack(spacing: 0) {
+            // 1. MENU EDIT ACCOUNT
             NavigationLink(destination: EditProfileView()) {
-                ProfileMenuRowView(
+                ProfileMenuRow(
                     icon: "person.text.rectangle",
                     title: "Edit Account Information"
                 )
             }
             .buttonStyle(.plain)
-            
+
+            // Menu khusus Debater
             if authVM.currentUser?.role == .debater {
                 Divider().padding(.leading, 40)
 
@@ -113,8 +117,9 @@ struct ProfileView: View {
 
             Divider().padding(.leading, 40)
 
+            // 2. MENU TOS
             NavigationLink(destination: TermsOfServiceView()) {
-                ProfileMenuRowView(
+                ProfileMenuRow(
                     icon: "doc.text.fill",
                     title: "Terms of Service (TOS)"
                 )

@@ -54,15 +54,3 @@ struct CommunityNotesView: View {
         }
     }
 }
-
-// MARK: - Preview
-
-#Preview {
-    CommunityNotesView(
-        viewModel: MotionArchiveViewModel(
-            apiProxy: MockCloudFunctions(),
-            localCache: LocalCoreDataStorage()
-        )
-    )
-    .background(Color.bgCream)
-}

@@ -9,13 +9,10 @@ import Combine
 import SwiftUI
 
 struct SparringView: View {
-
     @ObservedObject var viewModel: SparringViewModel
-    let timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+    @EnvironmentObject var authVM: AuthViewModel
 
-    init(viewModel: SparringViewModel) {
-        self.viewModel = viewModel
-    }
+    let timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
@@ -34,9 +31,11 @@ struct SparringView: View {
                                 .padding(.top, 60)
                         }
 
-                        // DUPLIKAT DIHAPUS. Cukup 1 ForEach saja.
                         ForEach(viewModel.lobbyRooms) { room in
-                            SparringRoomCard(room: room, viewModel: viewModel)
+                            SparringRoomCardView(
+                                room: room,
+                                viewModel: viewModel
+                            )
                         }
                     }
                     .padding(.horizontal, 16)
@@ -44,26 +43,30 @@ struct SparringView: View {
                     .padding(.bottom, 120)
                 }
 
-                Button(action: { viewModel.isShowingCreateRoom = true }) {
-                    Image(systemName: "plus")
-                        .font(.title2.bold())
-                        .foregroundStyle(.white)
-                        .frame(width: 60, height: 60)
-                        .background(Color.btnPositive)
-                        .clipShape(Circle())
-                        .shadow(
-                            color: Color.black.opacity(0.15),
-                            radius: 8,
-                            x: 0,
-                            y: 4
-                        )
+                // 2. Wrap tombol ini dengan pengecekan role
+                // Admin tidak bisa membuat sparring lobby
+                if authVM.currentUser?.role != .admin {
+                    Button(action: { viewModel.isShowingCreateRoom = true }) {
+                        Image(systemName: "plus")
+                            .font(.title2.bold())
+                            .foregroundStyle(.white)
+                            .frame(width: 60, height: 60)
+                            .background(Color.btnPositive)
+                            .clipShape(Circle())
+                            .shadow(
+                                color: Color.black.opacity(0.15),
+                                radius: 8,
+                                x: 0,
+                                y: 4
+                            )
+                    }
+                    .padding(.trailing, 24)
+                    .padding(.bottom, 110)
                 }
-                .padding(.trailing, 24)
-                .padding(.bottom, 110)
             }
             .navigationTitle("Sparring Lobby")
             .onAppear {
-                viewModel.fetchLobbyRooms()
+                viewModel.listenToRooms()
                 viewModel.checkAndCancelExpiredRooms()
                 viewModel.cleanupOldRooms()
             }
@@ -79,12 +82,4 @@ struct SparringView: View {
             .modernToast(message: $viewModel.alertMessage, isError: false)
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview {
-    SparringView(
-        viewModel: SparringViewModel(dbService: MockFirestoreService())
-    )
 }

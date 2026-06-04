@@ -1,47 +1,48 @@
 //
-//  SparringRoomCard.swift
+//  SparringRoomCardView.swift
 //  YukDebat
 //
 //  Created by Keane Juan Suryanto on 01/06/26.
 //
 
+// MARK: - SparringRoomCardView - View
+
 import SwiftUI
 
-struct SparringRoomCard: View {
+/// Represents a single sparring room item in the lobby.
+struct SparringRoomCardView: View {
+
+    // MARK: - Properties
+
     let room: SparringRoomModel
     @ObservedObject var viewModel: SparringViewModel
 
-    @State private var showManageSheet = false
-    @State private var showJoinOptions = false
-    @State private var showLeaveAlert = false
-    @State private var showCancelAlert = false  // FIX: Tambahan state untuk Cancel Request
+    @State private var isShowingManageSheet = false
+    @State private var isShowingJoinOptions = false
+    @State private var isShowingLeaveAlert = false
+    @State private var isShowingCancelAlert = false
+
+    // MARK: - Body
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             headerSection
             bodySection
-
-            Divider()
-                .padding(.vertical, 2)
-
+            Divider().padding(.vertical, 2)
             footerSection
         }
         .padding(16)
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16).stroke(
-                Color.black.opacity(0.04),
-                lineWidth: 1
-            )
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.black.opacity(0.04), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.04), radius: 8, y: 4)
-
-        // 1. Dialog Join
         .confirmationDialog(
             room.accessType == .privateAccess
                 ? "Request to Join" : "Join Sparring",
-            isPresented: $showJoinOptions
+            isPresented: $isShowingJoinOptions
         ) {
             Button("Solo") {
                 if room.accessType == .privateAccess {
@@ -73,9 +74,7 @@ struct SparringRoomCard: View {
                     : "Choose your registration mode to join this room."
             )
         }
-
-        // 2. Alert Leave Room
-        .alert("Leave Room", isPresented: $showLeaveAlert) {
+        .alert("Leave Room", isPresented: $isShowingLeaveAlert) {
             Button("Leave", role: .destructive) {
                 viewModel.leaveRoom(roomId: room.id)
             }
@@ -83,9 +82,7 @@ struct SparringRoomCard: View {
         } message: {
             Text("Are you sure you want to leave this sparring room?")
         }
-
-        // 3. Alert Cancel Request (FIX)
-        .alert("Cancel Request", isPresented: $showCancelAlert) {
+        .alert("Cancel Request", isPresented: $isShowingCancelAlert) {
             Button("Cancel Request", role: .destructive) {
                 viewModel.cancelRequest(roomId: room.id)
             }
@@ -93,9 +90,7 @@ struct SparringRoomCard: View {
         } message: {
             Text("Are you sure you want to cancel your join request?")
         }
-
-        // 4. Sheet Manage Room
-        .sheet(isPresented: $showManageSheet) {
+        .sheet(isPresented: $isShowingManageSheet) {
             ManageSparringRoomView(room: room, viewModel: viewModel)
         }
     }
@@ -104,7 +99,6 @@ struct SparringRoomCard: View {
 
     private var headerSection: some View {
         HStack {
-            // Status Badge
             HStack(spacing: 6) {
                 Circle().fill(stateColor).frame(width: 8, height: 8)
                 Text(room.state.rawValue)
@@ -118,7 +112,6 @@ struct SparringRoomCard: View {
 
             Spacer()
 
-            // Time Info
             HStack(spacing: 4) {
                 Image(systemName: "calendar")
                 Text(
@@ -133,8 +126,6 @@ struct SparringRoomCard: View {
         }
     }
 
-    // Di dalam file SparringRoomCard.swift
-
     private var bodySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(room.motionTitle)
@@ -143,7 +134,6 @@ struct SparringRoomCard: View {
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // TAMPILKAN NOTES JIKA ADA
             if !room.specialNotes.isEmpty {
                 Text("Notes: \(room.specialNotes)")
                     .font(.caption)
@@ -157,7 +147,6 @@ struct SparringRoomCard: View {
                     Image(systemName: "number.square.fill")
                     Text(room.id.prefix(6).uppercased())
                 }
-
                 HStack(spacing: 4) {
                     Image(systemName: "person.2.fill")
                     Text("\(room.participants.count)/8 Joined")
@@ -176,23 +165,38 @@ struct SparringRoomCard: View {
     @ViewBuilder
     private var actionButton: some View {
         if room.state == .cancelled || room.state == .done {
-            Text(room.state.rawValue).font(.subheadline.bold()).foregroundStyle(
-                .gray
-            )
+            Text(room.state.rawValue)
+                .font(.subheadline.bold())
+                .foregroundStyle(.gray)
         } else if viewModel.isUserHost(room: room) {
-            Button("Manage") { showManageSheet = true }
-                .font(.subheadline.bold()).foregroundStyle(.white)
-                .padding(.horizontal, 16).padding(.vertical, 8).background(
-                    Color.accentWalnut
-                )
-                .clipShape(Capsule())
-        } else if viewModel.isUserPending(room: room) {
-            Button("Cancel Request") { showCancelAlert = true }
-                .font(.subheadline.bold()).foregroundStyle(Color.btnNegative)
-        } else if viewModel.isUserInRoom(room: room) {
-            // --- REVISI: TOMBOL JOIN MEETING ---
             HStack(spacing: 8) {
-                Button(action: { showLeaveAlert = true }) {
+                Button("Manage") { isShowingManageSheet = true }
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.accentWalnut)
+                    .clipShape(Capsule())
+
+                if room.state == .preparing || room.state == .ongoing {
+                    Button("End") {
+                        viewModel.completeRoom(roomId: room.id)
+                    }
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.btnNegative)
+                    .clipShape(Capsule())
+                }
+            }
+        } else if viewModel.isUserPending(room: room) {
+            Button("Cancel Request") { isShowingCancelAlert = true }
+                .font(.subheadline.bold())
+                .foregroundStyle(Color.btnNegative)
+        } else if viewModel.isUserInRoom(room: room) {
+            HStack(spacing: 8) {
+                Button(action: { isShowingLeaveAlert = true }) {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
                 }
                 .foregroundStyle(Color.btnNegative)
@@ -202,19 +206,22 @@ struct SparringRoomCard: View {
                         UIApplication.shared.open(url)
                     }
                 }
-                .font(.subheadline.bold()).foregroundStyle(.white)
-                .padding(.horizontal, 16).padding(.vertical, 8)
+                .font(.subheadline.bold())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
                 .background(Color.btnPositive)
                 .clipShape(Capsule())
             }
         } else {
             Button(room.accessType == .privateAccess ? "Request" : "Join") {
-                showJoinOptions = true
+                isShowingJoinOptions = true
             }
-            .font(.subheadline.bold()).foregroundStyle(.white)
-            .padding(.horizontal, 16).padding(.vertical, 8).background(
-                Color.btnPositive
-            )
+            .font(.subheadline.bold())
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.btnPositive)
             .clipShape(Capsule())
         }
     }
@@ -229,7 +236,6 @@ struct SparringRoomCard: View {
 
     @ViewBuilder
     private var participantBadge: some View {
-        // FIX: Deteksi jika sudah Join di dalam Room
         if viewModel.isUserInRoom(room: room),
             let myParticipant = room.participants.first(where: {
                 $0.userId == viewModel.currentUserId
@@ -239,9 +245,7 @@ struct SparringRoomCard: View {
                 text: "Joined: \(myParticipant.regMode.rawValue.capitalized)",
                 color: Color.btnPositive
             )
-        }
-        // FIX: Deteksi jika masih Pending Request (Private Room)
-        else if viewModel.isUserPending(room: room),
+        } else if viewModel.isUserPending(room: room),
             let pendingList = viewModel.pendingRequests[room.id],
             let myPending = pendingList.first(where: {
                 $0.userId == viewModel.currentUserId
@@ -271,26 +275,4 @@ struct SparringRoomCard: View {
         default: return Color.btnPositive
         }
     }
-}
-
-// MARK: - Preview
-
-#Preview {
-    SparringRoomCard(
-        room: SparringRoomModel(
-            id: "room_public_1",
-            hostId: "user_mario_123",
-            scheduledTime: Date().addingTimeInterval(7200),
-            motionTitle: "Education",
-            specialNotes: "Standard BP practice.",
-            meetingLink: "https://zoom.us/j/dummy",
-            accessType: .publicAccess,
-            state: .preparing,
-            participants: [],
-            isAdjudicatorNeeded: true
-        ),
-        viewModel: SparringViewModel(dbService: MockFirestoreService())
-    )
-    .padding()
-    .background(Color.bgCream)
 }

@@ -5,6 +5,8 @@
 //  Created by Hanzelius Kwan on 29/05/26.
 //
 
+// MARK: - MotionModel - Model
+
 import Foundation
 
 /// Holds the data for a debate motion fetched from the external API or local fallback.
