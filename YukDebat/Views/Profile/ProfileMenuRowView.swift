@@ -1,5 +1,5 @@
 //
-//  ProfileMenuRow.swift
+//  ProfileMenuRowView.swift
 //  YukDebat
 //
 //  Created by Keane Juan Suryanto on 01/06/26.
@@ -9,7 +9,7 @@ import SwiftUI
 
 /// A reusable UI component representing a single row in the profile settings menu.
 /// Ensures consistent typography, spacing, and icon alignment.
-struct ProfileMenuRow: View {
+struct ProfileMenuRowView: View {
 
     // MARK: - Properties
 
@@ -43,12 +43,12 @@ struct ProfileMenuRow: View {
 
 #Preview {
     VStack(spacing: 0) {
-        ProfileMenuRow(
+        ProfileMenuRowView(
             icon: "person.text.rectangle",
             title: "Edit Account Information"
         )
         Divider().padding(.leading, 40)
-        ProfileMenuRow(icon: "bell.badge.fill", title: "System Notifications")
+        ProfileMenuRowView(icon: "bell.badge.fill", title: "System Notifications")
     }
     .background(Color.white)
     .clipShape(RoundedRectangle(cornerRadius: 16))
