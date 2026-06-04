@@ -1,5 +1,5 @@
 //
-//  AdminAdjudicatorHistoryRow.swift
+//  AdminAdjudicatorHistoryRowView.swift
 //  YukDebat
 //
 //  Created by Keane Juan Suryanto on 01/06/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AdminAdjudicatorHistoryRow: View {
+struct AdminAdjudicatorHistoryRowView: View {
     let req: AdjudicatorRequestModel
     
     var body: some View {
