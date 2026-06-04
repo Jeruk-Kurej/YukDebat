@@ -58,7 +58,7 @@ struct SparringView: View {
                             )
                     }
                     .padding(.trailing, 24)
-                    .padding(.bottom, 110)
+                    .padding(.bottom, 16)
                 }
             }
             .navigationTitle("Sparring Lobby")

@@ -122,7 +122,7 @@ struct CompetitionView: View {
                 .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
         }
         .padding(.trailing, 24)
-        .padding(.bottom, 110)
+        .padding(.bottom, 16)
     }
 }
 
