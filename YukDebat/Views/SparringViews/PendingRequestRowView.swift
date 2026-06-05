@@ -21,6 +21,16 @@ struct PendingRequestRowView: View {
                 }
             }
             Spacer()
+            
+            let modeText = participant.regMode == .team ? "Team (2 Slots)" : "Solo (1 Slot)"
+            Text(modeText)
+                .font(.caption2.bold())
+                .padding(.horizontal, 6).padding(.vertical, 3)
+                .background(Color.orange.opacity(0.1))
+                .foregroundStyle(Color.orange)
+                .clipShape(Capsule())
+                .padding(.trailing, 4)
+
             Button(action: onReject) {
                 Image(systemName: "xmark.circle.fill").font(.title2)
                     .foregroundStyle(Color.btnNegative)

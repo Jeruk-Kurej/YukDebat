@@ -27,7 +27,8 @@ struct SparringParticipantRowView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            Text(participant.regMode.rawValue.capitalized)
+            let modeText = participant.regMode == .team ? "Team (2 Slots)" : "Solo (1 Slot)"
+            Text(modeText)
                 .font(.caption2.bold())
                 .padding(.horizontal, 8).padding(.vertical, 4)
                 .background(Color.accentWalnut.opacity(0.1))
