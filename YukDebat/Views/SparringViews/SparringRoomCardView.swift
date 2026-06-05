@@ -109,6 +109,14 @@ struct SparringRoomCardView: View {
             .padding(.vertical, 5)
             .background(Color.gray.opacity(0.1))
             .clipShape(Capsule())
+            
+            Text(room.accessType == .publicAccess ? "Public" : "Private")
+                .font(.caption2.bold())
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(room.accessType == .publicAccess ? Color.blue.opacity(0.1) : Color.purple.opacity(0.1))
+                .foregroundStyle(room.accessType == .publicAccess ? Color.blue : Color.purple)
+                .clipShape(Capsule())
 
             Spacer()
 

@@ -23,7 +23,9 @@ struct ManageSparringRoomView: View {
                 VStack(spacing: 0) {
                     List {
                         statusSection
-                        pendingRequestsSection
+                        if room.accessType == .privateAccess {
+                            pendingRequestsSection
+                        }
                         participantsSection
                     }
                     .scrollContentBackground(.hidden)
@@ -75,6 +77,20 @@ struct ManageSparringRoomView: View {
                     .foregroundStyle(
                         room.state == .ongoing ? Color.red : Color.btnPositive
                     )
+            }
+            HStack {
+                Text("Visibility")
+                Spacer()
+                Picker("Visibility", selection: Binding(
+                    get: { room.accessType },
+                    set: { newValue in
+                        viewModel.updateVisibility(roomId: room.id, newVisibility: newValue)
+                    }
+                )) {
+                    Text("Public").tag(VisibilityType.publicAccess)
+                    Text("Private").tag(VisibilityType.privateAccess)
+                }
+                .pickerStyle(.menu)
             }
         }
         .listRowBackground(Color.white)
