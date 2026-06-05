@@ -85,6 +85,17 @@ class MotionArchiveViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     self.isGenerating = false
+                    
+                    // Fallback using dummy data
+                    let fallbackText = self.dummyMotions.randomElement() ?? "Dewan ini akan mendukung transisi energi hijau secara penuh"
+                    let fallbackMotion = MotionModel(
+                        id: UUID().uuidString,
+                        title: fallbackText,
+                        isWishlisted: false
+                    )
+                    self.motionsList.insert(fallbackMotion, at: 0)
+                    
+                    // Call error handler to show toast
                     self.handleFetchError(error)
                 }
             }
@@ -185,12 +196,35 @@ class MotionArchiveViewModel: ObservableObject {
         if errStr.contains("503") || errStr.contains("demand")
             || errStr.contains("unavailable")
         {
-            self.toastMessage = "Server Gemini sedang penuh. Coba lagi nanti!"
+            self.toastMessage = "Server penuh. Menampilkan mosi cadangan."
         } else {
-            self.toastMessage = "Gagal memproses AI mosi."
+            self.toastMessage = "Gagal memproses AI mosi. Menampilkan mosi cadangan."
         }
         self.isHighDemandToastVisible = true
     }
+
+    private let dummyMotions: [String] = [
+        "Kita harus menghentikan segala bentuk eksplorasi ruang angkasa sebelum seluruh masalah kemiskinan di Bumi terselesaikan.",
+        "Pemerintah perlu mewajibkan setiap warga negara untuk mengikuti program pelatihan literasi digital selama satu tahun penuh setelah lulus SMA.",
+        "Kepemilikan hak cipta atas karya seni yang dihasilkan oleh AI seharusnya tidak diberikan kepada siapa pun (menjadi milik publik).",
+        "Penyelenggaraan konser musik skala besar harus dilarang demi menekan jejak karbon yang dihasilkan oleh mobilitas penonton.",
+        "Kehidupan di kota besar sebaiknya tidak lagi diukur berdasarkan pendapatan ekonomi, melainkan berdasarkan skor aksesibilitas ruang terbuka hijau.",
+        "Setiap individu harus memiliki batas maksimal penggunaan data internet per bulan demi keberlangsungan ekosistem server global.",
+        "Kita sebaiknya mewajibkan setiap politisi untuk menjalani tes psikologi independen secara berkala di depan publik.",
+        "Warisan kekayaan pribadi di atas 10 miliar rupiah harus disita oleh negara secara otomatis untuk dana pendidikan nasional.",
+        "Hubungan romantis di tempat kerja seharusnya dilarang keras demi menjaga profesionalisme dan produktivitas organisasi.",
+        "Perusahaan rintisan (startup) tidak boleh lagi mendapatkan pendanaan dari investor asing guna menjaga kedaulatan data ekonomi dalam negeri.",
+        "Dewan ini akan melarang produksi dan konsumsi daging hewan untuk menyelamatkan lingkungan hidup.",
+        "Dewan ini percaya bahwa pendidikan universitas harus digratiskan sepenuhnya oleh negara.",
+        "Dewan ini akan menghapus tes standar nasional sebagai syarat kelulusan dan penerimaan di institusi pendidikan.",
+        "Dewan ini akan memungut pajak yang tinggi untuk industri fast fashion demi mengurangi limbah.",
+        "Dewan ini percaya bahwa media sosial lebih banyak memberikan dampak negatif daripada positif bagi perkembangan remaja.",
+        "Dewan ini akan mewajibkan pemilu diselenggarakan secara elektronik (e-voting) untuk meningkatkan partisipasi masyarakat.",
+        "Dewan ini percaya bahwa orang tua harus bertanggung jawab secara pidana atas tindak kejahatan yang dilakukan oleh anak di bawah umur.",
+        "Dewan ini akan menghukum negara-negara maju yang tidak mau menerima pengungsi akibat krisis iklim.",
+        "Dewan ini percaya bahwa kecerdasan buatan (AI) akan membawa dampak buruk bagi stabilitas lapangan kerja global.",
+        "Dewan ini akan memberikan subsidi penuh bagi industri lokal untuk bersaing dengan perusahaan multinasional."
+    ]
 
     private func mapDocumentsToNotes(_ documents: [QueryDocumentSnapshot])
         -> [CaseBuildingNoteModel]
