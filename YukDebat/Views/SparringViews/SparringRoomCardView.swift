@@ -157,10 +157,10 @@ struct SparringRoomCardView: View {
                 }
                 HStack(spacing: 4) {
                     Image(systemName: "person.2.fill")
-                    Text("\(room.participants.count)/8 Joined")
+                    Text("\(room.totalSlotsFilled())/8 Joined")
                 }
                 .foregroundStyle(
-                    room.participants.count >= 8
+                    room.totalSlotsFilled() >= 8
                         ? Color.btnNegative : .secondary
                 )
             }

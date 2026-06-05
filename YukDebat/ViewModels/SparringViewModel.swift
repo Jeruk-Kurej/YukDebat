@@ -107,30 +107,19 @@ class SparringViewModel: ObservableObject {
         guard let user = Auth.auth().currentUser else { return }
         let userId = user.uid
         let email = user.email ?? ""
-        let name = user.displayName ?? email.components(separatedBy: "@").first ?? "Debater"
+        var name = user.displayName ?? email.components(separatedBy: "@").first ?? "Debater"
+        if mode == .team { name += " Team" }
 
-        var newParticipants: [[String: Any]] = [
-            [
-                "userId": userId,
-                "userName": name,
-                "userEmail": email,
-                "roleSlot": RoleSlotType.openingGovt.rawValue,
-                "regMode": mode.rawValue,
-            ]
+        let newParticipant: [String: Any] = [
+            "userId": userId,
+            "userName": name,
+            "userEmail": email,
+            "roleSlot": RoleSlotType.openingGovt.rawValue,
+            "regMode": mode.rawValue,
         ]
-        
-        if mode == .team {
-            newParticipants.append([
-                "userId": UUID().uuidString,
-                "userName": "\(name)'s Partner",
-                "userEmail": "",
-                "roleSlot": RoleSlotType.openingGovt.rawValue,
-                "regMode": mode.rawValue,
-            ])
-        }
 
         db.collection("sparring_rooms").document(room.id).updateData([
-            "participants": FieldValue.arrayUnion(newParticipants)
+            "participants": FieldValue.arrayUnion([newParticipant])
         ]) { error in
             if error == nil { self.alertMessage = "Berhasil Join!" }
         }
@@ -141,7 +130,8 @@ class SparringViewModel: ObservableObject {
         guard let user = Auth.auth().currentUser else { return }
         let userId = user.uid
         let email = user.email ?? ""
-        let userName = user.displayName ?? email.components(separatedBy: "@").first ?? "Debater"
+        var userName = user.displayName ?? email.components(separatedBy: "@").first ?? "Debater"
+        if isTeam { userName += " Team" }
 
         let mode: RegMode = isTeam ? .team : .solo
         let newRequest: [String: Any] = [
@@ -168,24 +158,12 @@ class SparringViewModel: ObservableObject {
         else { return }
 
         let participantDict = acceptedUser.toDictionary()
-        var newParticipants = [participantDict]
-        
-        if acceptedUser.regMode == .team {
-            let partnerDict: [String: Any] = [
-                "userId": UUID().uuidString,
-                "userName": "\(acceptedUser.userName)'s Partner",
-                "userEmail": "",
-                "roleSlot": acceptedUser.roleSlot.rawValue,
-                "regMode": acceptedUser.regMode.rawValue,
-            ]
-            newParticipants.append(partnerDict)
-        }
 
         let updatedPending = pendingList.filter { $0.userId != participantId }
             .map { $0.toDictionary() }
 
         db.collection("sparring_rooms").document(roomId).updateData([
-            "participants": FieldValue.arrayUnion(newParticipants),
+            "participants": FieldValue.arrayUnion([participantDict]),
             "pendingRequests": updatedPending,
         ])
     }

@@ -125,7 +125,7 @@ struct ManageSparringRoomView: View {
 
     private var participantsSection: some View {
         Section(
-            header: Text("Active Participants (\(room.participants.count)/8)")
+            header: Text("Active Participants (\(room.totalSlotsFilled())/8)")
                 .font(.caption.bold())
         ) {
             if room.participants.isEmpty {
