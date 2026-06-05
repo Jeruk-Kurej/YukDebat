@@ -134,12 +134,17 @@ class ModerationDashboardViewModel: ObservableObject {
         db.collection("competitions").document(compId).updateData([
             "status": status
         ]) { error in
-            if error == nil && status == "ACTIVE" {
-                NotificationService.shared.sendNotification(
-                    title: "Lomba Berhasil Disetujui! 🏆",
-                    body:
-                        "Kompetisi baru telah diverifikasi oleh admin dan sekarang statusnya aktif di aplikasi."
-                )
+            if let error = error {
+                print("❌ Error updating competition status: \(error.localizedDescription)")
+            } else {
+                print("✅ Competition status updated to \(status)")
+                if status == "ACTIVE" {
+                    NotificationService.shared.sendNotification(
+                        title: "Lomba Berhasil Disetujui! 🏆",
+                        body:
+                            "Kompetisi baru telah diverifikasi oleh admin dan sekarang statusnya aktif di aplikasi."
+                    )
+                }
             }
         }
     }
@@ -168,7 +173,10 @@ class ModerationDashboardViewModel: ObservableObject {
             forDocument: db.collection("users").document(userId)
         )
         batch.commit { error in
-            if error == nil {
+            if let error = error {
+                print("❌ Error approving adjudicator: \(error.localizedDescription)")
+            } else {
+                print("✅ Adjudicator approved")
                 NotificationService.shared.sendNotification(
                     title: "Pengajuan Juri Disetujui! 🎖️",
                     body:
@@ -188,6 +196,12 @@ class ModerationDashboardViewModel: ObservableObject {
     func rejectAdjudicator(reqId: String) {
         db.collection("adjudicator_requests").document(reqId).updateData([
             "status": "REJECTED"
-        ])
+        ]) { error in
+            if let error = error {
+                print("❌ Error rejecting adjudicator: \(error.localizedDescription)")
+            } else {
+                print("✅ Adjudicator rejected")
+            }
+        }
     }
 }
