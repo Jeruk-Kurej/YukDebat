@@ -33,11 +33,18 @@ struct SparringRoomModel: Codable, Identifiable {
 
     // MARK: - Methods
 
+    func totalSlotsFilled() -> Int {
+        participants.reduce(0) { total, participant in
+            total + (participant.regMode == .team ? 2 : 1)
+        }
+    }
+
     func isRoomFull() -> Bool {
-        return participants.count >= 8
+        return totalSlotsFilled() >= 8
     }
 
     func hasIdealTeams() -> Bool {
-        return !participants.isEmpty && participants.count % 2 == 0
+        let total = totalSlotsFilled()
+        return total > 0 && total % 2 == 0
     }
 }
