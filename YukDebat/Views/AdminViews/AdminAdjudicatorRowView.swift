@@ -37,36 +37,31 @@ struct AdminAdjudicatorRowView: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 16)
 
-            HStack(spacing: 12) {
-                Button(action: {
-                    print("🔘 AdminAdjudicatorRowView: Reject clicked")
-                    onReject()
-                }) {
-                    Text("Reject")
-                        .font(.subheadline.bold())
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .contentShape(Rectangle())
-                        .background(Color.btnNegative.opacity(0.1))
-                        .foregroundStyle(Color.btnNegative)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
-                .buttonStyle(BorderlessButtonStyle())
+                Text("Reject")
+                    .font(.subheadline.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                    .background(Color.btnNegative.opacity(0.1))
+                    .foregroundStyle(Color.btnNegative)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .onTapGesture {
+                        print("🔘 AdminAdjudicatorRowView: Reject clicked")
+                        onReject()
+                    }
 
-                Button(action: {
-                    print("🔘 AdminAdjudicatorRowView: Approve clicked")
-                    onApprove()
-                }) {
-                    Text("Approve")
-                        .font(.subheadline.bold())
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .contentShape(Rectangle())
-                        .background(Color.btnPositive)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
-                .buttonStyle(BorderlessButtonStyle())
+                Text("Approve")
+                    .font(.subheadline.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                    .background(Color.btnPositive)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .onTapGesture {
+                        print("🔘 AdminAdjudicatorRowView: Approve clicked")
+                        onApprove()
+                    }
             }
             .padding(16)
         }
