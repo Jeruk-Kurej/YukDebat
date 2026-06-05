@@ -64,3 +64,4 @@ YukDebat/GoogleService-Info.plist
 YukDebat/GoogleService-Info.plist
 .DS_Store
 YukDebat/APIKey.swift
+YukDebat/Utils/APIKey.swift
