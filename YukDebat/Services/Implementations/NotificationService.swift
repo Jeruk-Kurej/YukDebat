@@ -19,10 +19,10 @@ class NotificationService {
             .alert, .sound, .badge,
         ]) { granted, error in
             if granted {
-                print("✅ Izin notifikasi diberikan.")
+                print("Izin notifikasi diberikan.")
             } else if let error = error {
                 print(
-                    "❌ Gagal meminta izin notifikasi: \(error.localizedDescription)"
+                    "Gagal meminta izin notifikasi: \(error.localizedDescription)"
                 )
             }
         }
@@ -49,7 +49,7 @@ class NotificationService {
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 print(
-                    "❌ Gagal mengirim notifikasi lokal: \(error.localizedDescription)"
+                    "Gagal mengirim notifikasi lokal: \(error.localizedDescription)"
                 )
             }
         }
