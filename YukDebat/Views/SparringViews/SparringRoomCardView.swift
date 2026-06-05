@@ -55,15 +55,17 @@ struct SparringRoomCardView: View {
                     viewModel.joinRoom(room: room, mode: .solo)
                 }
             }
-            Button("Team") {
-                if room.accessType == .privateAccess {
-                    viewModel.requestJoin(
-                        roomId: room.id,
-                        role: .openingGovt,
-                        isTeam: true
-                    )
-                } else {
-                    viewModel.joinRoom(room: room, mode: .team)
+            if room.totalSlotsFilled() <= 6 {
+                Button("Team") {
+                    if room.accessType == .privateAccess {
+                        viewModel.requestJoin(
+                            roomId: room.id,
+                            role: .openingGovt,
+                            isTeam: true
+                        )
+                    } else {
+                        viewModel.joinRoom(room: room, mode: .team)
+                    }
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -222,15 +224,26 @@ struct SparringRoomCardView: View {
                 .clipShape(Capsule())
             }
         } else {
-            Button(room.accessType == .privateAccess ? "Request" : "Join") {
-                isShowingJoinOptions = true
+            if room.isRoomFull() {
+                Button("Full") {}
+                .font(.subheadline.bold())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.gray)
+                .clipShape(Capsule())
+                .disabled(true)
+            } else {
+                Button(room.accessType == .privateAccess ? "Request" : "Join") {
+                    isShowingJoinOptions = true
+                }
+                .font(.subheadline.bold())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.btnPositive)
+                .clipShape(Capsule())
             }
-            .font(.subheadline.bold())
-            .foregroundStyle(.white)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(Color.btnPositive)
-            .clipShape(Capsule())
         }
     }
 

@@ -111,10 +111,16 @@ struct ManageSparringRoomView: View {
                             )
                         },
                         onApprove: {
-                            viewModel.acceptRequest(
-                                roomId: room.id,
-                                participantId: participant.userId
-                            )
+                            if participant.regMode == .team && room.totalSlotsFilled() > 6 {
+                                viewModel.errorMessage = "Not enough slots for a team."
+                            } else if room.isRoomFull() {
+                                viewModel.errorMessage = "Room is full."
+                            } else {
+                                viewModel.acceptRequest(
+                                    roomId: room.id,
+                                    participantId: participant.userId
+                                )
+                            }
                         }
                     )
                 }
