@@ -37,6 +37,7 @@ struct AdminAdjudicatorRowView: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 16)
 
+            HStack(spacing: 12) {
                 Text("Reject")
                     .font(.subheadline.bold())
                     .frame(maxWidth: .infinity)
