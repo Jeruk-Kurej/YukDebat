@@ -104,19 +104,33 @@ class SparringViewModel: ObservableObject {
 
     /// Joins a room directly (for public rooms).
     func joinRoom(room: SparringRoomModel, mode: RegMode) {
-        guard let userId = Auth.auth().currentUser?.uid,
-            let name = Auth.auth().currentUser?.displayName
-        else { return }
+        guard let user = Auth.auth().currentUser else { return }
+        let userId = user.uid
+        let email = user.email ?? ""
+        let name = user.displayName ?? email.components(separatedBy: "@").first ?? "Debater"
 
-        let newParticipant: [String: Any] = [
-            "userId": userId,
-            "userName": name,
-            "roleSlot": RoleSlotType.openingGovt.rawValue,
-            "regMode": mode.rawValue,
+        var newParticipants: [[String: Any]] = [
+            [
+                "userId": userId,
+                "userName": name,
+                "userEmail": email,
+                "roleSlot": RoleSlotType.openingGovt.rawValue,
+                "regMode": mode.rawValue,
+            ]
         ]
+        
+        if mode == .team {
+            newParticipants.append([
+                "userId": UUID().uuidString,
+                "userName": "\(name)'s Partner",
+                "userEmail": "",
+                "roleSlot": RoleSlotType.openingGovt.rawValue,
+                "regMode": mode.rawValue,
+            ])
+        }
 
         db.collection("sparring_rooms").document(room.id).updateData([
-            "participants": FieldValue.arrayUnion([newParticipant])
+            "participants": FieldValue.arrayUnion(newParticipants)
         ]) { error in
             if error == nil { self.alertMessage = "Berhasil Join!" }
         }
@@ -124,13 +138,16 @@ class SparringViewModel: ObservableObject {
 
     /// Requests to join a room (for private/moderated rooms).
     func requestJoin(roomId: String, role: RoleSlotType, isTeam: Bool) {
-        let userName = Auth.auth().currentUser?.displayName ?? "Debater"
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let user = Auth.auth().currentUser else { return }
+        let userId = user.uid
+        let email = user.email ?? ""
+        let userName = user.displayName ?? email.components(separatedBy: "@").first ?? "Debater"
 
         let mode: RegMode = isTeam ? .team : .solo
         let newRequest: [String: Any] = [
             "userId": userId,
             "userName": userName,
+            "userEmail": email,
             "roleSlot": role.rawValue,
             "regMode": mode.rawValue,
         ]
@@ -151,11 +168,24 @@ class SparringViewModel: ObservableObject {
         else { return }
 
         let participantDict = acceptedUser.toDictionary()
+        var newParticipants = [participantDict]
+        
+        if acceptedUser.regMode == .team {
+            let partnerDict: [String: Any] = [
+                "userId": UUID().uuidString,
+                "userName": "\(acceptedUser.userName)'s Partner",
+                "userEmail": "",
+                "roleSlot": acceptedUser.roleSlot.rawValue,
+                "regMode": acceptedUser.regMode.rawValue,
+            ]
+            newParticipants.append(partnerDict)
+        }
+
         let updatedPending = pendingList.filter { $0.userId != participantId }
             .map { $0.toDictionary() }
 
         db.collection("sparring_rooms").document(roomId).updateData([
-            "participants": FieldValue.arrayUnion([participantDict]),
+            "participants": FieldValue.arrayUnion(newParticipants),
             "pendingRequests": updatedPending,
         ])
     }
@@ -221,6 +251,13 @@ class SparringViewModel: ObservableObject {
                 self.alertMessage = "Ruang sparring telah selesai! 🏁"
             }
         }
+    }
+
+    /// Updates room visibility
+    func updateVisibility(roomId: String, newVisibility: VisibilityType) {
+        db.collection("sparring_rooms").document(roomId).updateData([
+            "accessType": newVisibility.rawValue
+        ])
     }
 
     // MARK: - Helpers (Status Checkers)
@@ -299,7 +336,8 @@ class SparringViewModel: ObservableObject {
                 userId: uid,
                 userName: pData["userName"] as? String ?? "Unknown",
                 roleSlot: role,
-                regMode: reg
+                regMode: reg,
+                userEmail: pData["userEmail"] as? String
             )
         }
     }
@@ -369,11 +407,15 @@ class SparringViewModel: ObservableObject {
 
 extension ParticipantModel {
     func toDictionary() -> [String: Any] {
-        return [
+        var dict: [String: Any] = [
             "userId": userId,
             "userName": userName,
             "roleSlot": roleSlot.rawValue,
             "regMode": regMode.rawValue,
         ]
+        if let userEmail = userEmail {
+            dict["userEmail"] = userEmail
+        }
+        return dict
     }
 }

@@ -16,4 +16,5 @@ struct ParticipantModel: Codable, Identifiable {
     let userName: String
     let roleSlot: RoleSlotType
     let regMode: RegMode
+    let userEmail: String?
 }

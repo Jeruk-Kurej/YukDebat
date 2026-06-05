@@ -14,7 +14,12 @@ struct PendingRequestRowView: View {
 
     var body: some View {
         HStack {
-            Text(participant.userName).font(.subheadline.bold())
+            VStack(alignment: .leading) {
+                Text(participant.userName).font(.subheadline.bold())
+                if let email = participant.userEmail, !email.isEmpty {
+                    Text(email).font(.caption).foregroundStyle(.secondary)
+                }
+            }
             Spacer()
             Button(action: onReject) {
                 Image(systemName: "xmark.circle.fill").font(.title2)
