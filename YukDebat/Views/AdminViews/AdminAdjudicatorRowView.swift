@@ -47,6 +47,7 @@ struct AdminAdjudicatorRowView: View {
                         .foregroundStyle(Color.btnNegative)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
+                .buttonStyle(.plain)
 
                 Button(action: onApprove) {
                     Text("Approve")
@@ -57,6 +58,7 @@ struct AdminAdjudicatorRowView: View {
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
+                .buttonStyle(.plain)
             }
             .padding(16)
         }

@@ -56,6 +56,7 @@ struct AdminPendingCardView: View {
                         .foregroundStyle(Color.btnNegative)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
+                .buttonStyle(.plain)
 
                 Button(action: { onAction(.approve) }) {
                     Text("Approve")
@@ -66,6 +67,7 @@ struct AdminPendingCardView: View {
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
+                .buttonStyle(.plain)
             }
             .padding(16)
         }
