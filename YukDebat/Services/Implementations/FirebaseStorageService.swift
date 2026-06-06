@@ -2703,3 +2703,116 @@ struct UploadProgress {
             / Double(totalBytes)
     }
 }
+
+import Foundation
+import FirebaseStorage
+
+// MARK: - Typealias
+
+typealias FirebaseUploadProgressHandler = (Double) -> Void
+
+// MARK: - Protocol
+
+protocol FirebaseStorageServiceProtocol {
+
+    func uploadImage(
+        request: ImageUploadRequest,
+        progress: FirebaseUploadProgressHandler?
+    ) async throws -> UploadResult
+
+    func uploadVideo(
+        request: VideoUploadRequest,
+        progress: FirebaseUploadProgressHandler?
+    ) async throws -> UploadResult
+
+    func uploadDocument(
+        request: DocumentUploadRequest,
+        progress: FirebaseUploadProgressHandler?
+    ) async throws -> UploadResult
+
+    func deleteFile(
+        path: String
+    ) async throws
+
+    func downloadURL(
+        path: String
+    ) async throws -> URL
+}
+
+// MARK: - Error
+
+enum FirebaseStorageServiceError: LocalizedError {
+
+    case invalidData
+    case invalidFileName
+    case invalidMimeType
+    case uploadFailed
+    case downloadFailed
+    case deleteFailed
+    case invalidURL
+    case invalidPath
+    case fileTooLarge
+    case unsupportedFileType
+    case metadataCreationFailed
+    case cancelled
+    case unknown
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidData:
+            return "Invalid data"
+        case .invalidFileName:
+            return "Invalid file name"
+        case .invalidMimeType:
+            return "Invalid mime type"
+        case .uploadFailed:
+            return "Upload failed"
+        case .downloadFailed:
+            return "Download failed"
+        case .deleteFailed:
+            return "Delete failed"
+        case .invalidURL:
+            return "Invalid URL"
+        case .invalidPath:
+            return "Invalid path"
+        case .fileTooLarge:
+            return "File too large"
+        case .unsupportedFileType:
+            return "Unsupported file type"
+        case .metadataCreationFailed:
+            return "Metadata creation failed"
+        case .cancelled:
+            return "Cancelled"
+        case .unknown:
+            return "Unknown error"
+        }
+    }
+}
+
+// MARK: - Upload Result
+
+struct UploadResult {
+
+    let path: String
+    let fileName: String
+    let downloadURL: URL
+    let contentType: String
+    let uploadedAt: Date
+}
+
+// MARK: - Upload Progress
+
+struct UploadProgress {
+
+    let totalBytes: Int64
+    let transferredBytes: Int64
+
+    var percentage: Double {
+        guard totalBytes > 0 else {
+            return 0
+        }
+
+        return Double(transferredBytes)
+            / Double(totalBytes)
+    }
+}
