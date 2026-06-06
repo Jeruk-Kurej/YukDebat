@@ -5,6 +5,8 @@
 //  Created by Hanzelius Kwan on 04/06/26.
 //
 
+// MARK: - GeminiModel - Model
+
 import Foundation
 
 struct GeminiResponse: Decodable {
