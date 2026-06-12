@@ -5,6 +5,8 @@
 //  Created by Mario Ruby Ariesusandi  on 01-06-2026.
 //
 
+// MARK: - AdjudicatorReq - ViewModel
+
 import Combine
 import FirebaseAuth
 import FirebaseFirestore

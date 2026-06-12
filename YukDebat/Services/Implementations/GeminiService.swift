@@ -9,8 +9,6 @@
 
 import Foundation
 
-/// Concrete service for interacting with the Google Gemini API.
-/// This service implements `GeminiServiceProtocol`.
 class GeminiService: GeminiServiceProtocol {
 
     // MARK: - Properties

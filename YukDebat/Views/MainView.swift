@@ -17,7 +17,6 @@ struct MainView: View {
 
     @StateObject private var motionVM = MotionArchiveViewModel(
         aiService: GeminiService(),
-        localCache: CoreDataStorageMock()
     )
 
     @StateObject private var sparringVM = SparringViewModel(

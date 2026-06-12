@@ -39,7 +39,6 @@ class MotionArchiveViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let aiService: GeminiServiceProtocol
-    private let localCache: CoreDataStorageServiceProtocol
     private let db = Firestore.firestore()
 
     private var myNotesListener: ListenerRegistration?
@@ -47,10 +46,9 @@ class MotionArchiveViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init(aiService: GeminiServiceProtocol, localCache: CoreDataStorageServiceProtocol)
+    init(aiService: GeminiServiceProtocol)
     {
         self.aiService = aiService
-        self.localCache = localCache
         loadDefaultMotions()
     }
 

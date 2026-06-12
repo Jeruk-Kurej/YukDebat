@@ -5,6 +5,8 @@
 //  Created by Bryan Carlie Lukito Setiawan on 29/05/26.
 //
 
+// MARK: - CloudFunctions - Protocols
+
 import Combine
 import FirebaseAuth
 import FirebaseFirestore

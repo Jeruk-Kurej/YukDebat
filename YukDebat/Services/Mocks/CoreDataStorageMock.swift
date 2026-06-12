@@ -1,22 +1,22 @@
+////
+////  LocalCoreDataStorage.swift
+////  YukDebat
+////
+////  Created by Mario Ruby Ariesusandi  on 29-05-2026.
+////
 //
-//  LocalCoreDataStorage.swift
-//  YukDebat
+//// MARK: - Persistence - Mocks
 //
-//  Created by Mario Ruby Ariesusandi  on 29-05-2026.
+//import Foundation
 //
-
-// MARK: - Persistence - Mocks
-
-import Foundation
-
-/// Mock implementation for local storage persistence.
-class CoreDataStorageMock: CoreDataStorageServiceProtocol {
-    
-    func saveLocalDraft(noteId: String, title: String, content: String) async throws {
-        print("Mock CoreData: Draft \(noteId) saved locally.")
-    }
-    
-    func executeLRUEviction(maxSizeInBytes: Int) throws {
-        print("Mock CoreData: Memory limit check executed.")
-    }
-}
+///// Mock implementation for local storage persistence.
+//class CoreDataStorageMock: CoreDataStorageServiceProtocol {
+//    
+//    func saveLocalDraft(noteId: String, title: String, content: String) async throws {
+//        print("Mock CoreData: Draft \(noteId) saved locally.")
+//    }
+//    
+//    func executeLRUEviction(maxSizeInBytes: Int) throws {
+//        print("Mock CoreData: Memory limit check executed.")
+//    }
+//}

@@ -5,6 +5,8 @@
 //  Created by Mario Ruby Ariesusandi  on 01-06-2026.
 //
 
+// MARK: - Evaluation - ViewModel
+
 import Combine
 import FirebaseFirestore
 import Foundation

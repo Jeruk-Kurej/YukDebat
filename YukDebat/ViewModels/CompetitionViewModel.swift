@@ -5,6 +5,8 @@
 //  Created by Keane Juan Suryanto on 29/05/26.
 //
 
+// MARK: - Competition - ViewModel
+
 import Combine
 import FirebaseAuth
 import FirebaseFirestore

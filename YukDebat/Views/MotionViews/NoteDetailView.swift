@@ -155,7 +155,7 @@ struct NoteDetailView: View {
                     )
             }
         } else if latestNote.visibility == .publicAccess {
-            if !isAdjudicatorContext {
+            if !isAdjudicatorContext && latestNote.ownerId == authVM.currentUser?.id {
                 Button(action: {
                     withAnimation {
                         viewModel.requestFeedback(for: latestNote.id)
@@ -186,8 +186,7 @@ struct NoteDetailView: View {
 #Preview {
     NoteDetailView(
         viewModel: MotionArchiveViewModel(
-            aiService: GeminiServiceMock(),
-            localCache: CoreDataStorageMock()
+            aiService: GeminiServiceMock()
         ),
         note: CaseBuildingNoteModel(
             id: "1",
